@@ -1,4 +1,24 @@
 (()=>{'use strict';
+// iPhone Home Screen viewport: iOS can report a smaller 100dvh than the
+// device display. Use the greater of its real screen and visible viewport.
+// Respond to scaling and rotation without changing recipe or background logic.
+function resizeInstalledPhone(){
+ const root=document.documentElement;
+ if(!root.classList.contains('lk-installed-phone'))return;
+ const deviceHeight=matchMedia('(orientation: landscape)').matches
+  ?Math.min(screen.width,screen.height):Math.max(screen.width,screen.height);
+ const nums=[deviceHeight,screen.availHeight,window.innerHeight,
+  root.clientHeight,window.visualViewport?.height]
+  .filter(n=>Number.isFinite(n)&&n>0);
+ const h=Math.ceil(Math.max(...nums));
+ if(h>=400&&h<6000)root.style.setProperty('--lk-installed-height',h+'px');
+}
+resizeInstalledPhone();
+window.addEventListener('resize',resizeInstalledPhone,{passive:true});
+window.addEventListener('orientationchange',resizeInstalledPhone,{passive:true});
+window.visualViewport?.addEventListener('resize',resizeInstalledPhone,{passive:true});
+window.addEventListener('pageshow',resizeInstalledPhone);
+
 const $=s=>document.querySelector(s), content=$('#content'), overlay=$('#overlay'), scene=$('#scene');
 const SCENES={grocery:'../reference-grocery.png',recipes:'../reference-recipes.png',food:'../reference-food.png',drink:'../reference-drink.png',dessert:'../reference-dessert.png',settings:'../reference-settings.png'};
 const CATS={food:'Food',drink:'Drinks',dessert:'Desserts'};

@@ -20,3 +20,15 @@
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 
 .nav-icon svg{width:28px;height:28px;display:block}.brand-icon span{font-size:31px}
+/* Installed iPhone: make the illustrated app cover the physical display even
+   when iOS reports a shorter dynamic viewport; never cap its width at 480px.
+   The existing background, tabs, cards and add button remain unchanged. */
+html.lk-installed-phone,html.lk-installed-phone body{
+ margin:0!important;width:100%!important;overflow:hidden
+}
+html.lk-installed-phone .app{
+ width:100%!important;max-width:none!important;margin:0!important;
+ height:var(--lk-installed-height,100dvh)!important;
+ min-height:var(--lk-installed-height,100dvh)!important;
+ max-height:none!important;border-radius:0!important;box-shadow:none!important
+}

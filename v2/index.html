@@ -8,6 +8,16 @@
  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
  <meta name="apple-mobile-web-app-title" content="Little Kitchen">
  <title>The Little Kitchen — Rebuilt</title>
+
+<script>
+/* Detect iPhone Home Screen mode early to avoid a jump on first paint. */
+try{
+ if((navigator.standalone===true||matchMedia('(display-mode: standalone)').matches)
+  && Math.min(screen.width,screen.height)<650){
+  document.documentElement.classList.add('lk-installed-phone');
+ }
+}catch(_){}
+</script>
  <link rel="stylesheet" href="./kitchen.css">
  <link rel="manifest" href="./manifest.webmanifest">
  <script defer src="./kitchen.js"></script>
