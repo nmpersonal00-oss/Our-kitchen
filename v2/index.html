@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+ <meta name="theme-color" content="#5d3327">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+ <meta name="apple-mobile-web-app-title" content="Little Kitchen">
+ <title>The Little Kitchen — Rebuilt</title>
+ <link rel="stylesheet" href="./kitchen.css">
+ <link rel="manifest" href="./manifest.webmanifest">
+ <script defer src="./kitchen.js"></script>
+</head>
+<body>
+ <div class="app" id="app">
+  <div class="scene" id="scene" aria-hidden="true"></div>
+  <header class="header">
+   <button class="brand" data-action="tab" data-tab="settings" aria-label="Open settings"><span class="brand-icon"><span>📖</span></span><span class="brand-copy"><span class="eyebrow">THE LITTLE</span><strong>Kitchen<span class="sparkle"> ✦</span></strong></span></button>
+   <button id="header-action" class="header-action" data-action="new-recipe" aria-label="Add recipe">+</button>
+  </header>
+  <main class="content" id="content" aria-live="polite"></main>
+  <button class="add-float" id="add-float" data-action="new-recipe" aria-label="Add a recipe">+</button>
+  <nav class="bottom-tabs" id="bottom-tabs" aria-label="Main navigation">
+   <button data-tab="grocery" data-action="tab"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="m3 8 3 12h12l3-12H3zM8 8l4-6 4 6M9 11v6m6-6v6"/></svg></span><span>Groceries</span></button>
+   <button data-tab="recipes" data-action="tab"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M12 6C9 3 6 3 3 4v15c3-1 6-1 9 2 3-3 6-3 9-2V4c-3-1-6-1-9 2zm0 0v15"/></svg></span><span>Recipes</span></button>
+   <button data-tab="food" data-action="tab"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 2v8c0 3 6 3 6 0V2M7 2v20M18 2c-3 3-4 7-4 11h5v9"/></svg></span><span>Food</span></button>
+   <button data-tab="drink" data-action="tab"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M3 9h14v6a6 6 0 0 1-6 6H9a6 6 0 0 1-6-6V9zm14 2h2a3 3 0 0 1 0 6h-2M7 2v4M12 2v4M3 21h17"/></svg></span><span>Drinks</span></button>
+   <button data-tab="dessert" data-action="tab"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 11h16v9H4v-9zM4 11c0-3 3-4 5-2 1-4 5-4 6 0 2-2 5-1 5 2M12 2v5M10 3l2-2 2 2M4 15h16"/></svg></span><span>Desserts</span></button>
+  </nav>
+  <div class="overlay" id="overlay" hidden></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <input type="file" id="import-file" accept="application/json" hidden>
+ </div>
+</body>
+</html>
