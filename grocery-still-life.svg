@@ -1,24 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 650 370" role="img" aria-label="Illustrated basket of fresh autumn groceries" preserveAspectRatio="xMidYMid meet">
-<defs>
- <radialGradient id="halo"><stop stop-color="#f7bb72" stop-opacity=".82"/><stop offset="1" stop-color="#ffbc71" stop-opacity="0"/></radialGradient>
- <linearGradient id="basket" x2=".4" y2="1"><stop stop-color="#e2a56c"/><stop offset=".52" stop-color="#b97549"/><stop offset="1" stop-color="#76432f"/></linearGradient>
- <linearGradient id="apple" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f5a25a"/><stop offset=".4" stop-color="#c85832"/><stop offset="1" stop-color="#8a2e2b"/></linearGradient>
- <radialGradient id="pumpkin"><stop stop-color="#f7bc68"/><stop offset=".7" stop-color="#d47d37"/><stop offset="1" stop-color="#9a4929"/></radialGradient>
- <filter id="soft"><feGaussianBlur stdDeviation="9"/></filter>
- <filter id="texture"><feTurbulence type="fractalNoise" baseFrequency=".5" numOctaves="3" seed="6"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".13"/></feComponentTransfer></filter>
- <filter id="shadow"><feGaussianBlur stdDeviation="12"/></filter>
- </defs>
- <ellipse cx="390" cy="165" rx="275" ry="200" fill="url(#halo)"/>
- <g stroke="#fae1a7" stroke-width="2" fill="none" opacity=".8"><path d="M87 65l9 9m0-9-9 9M546 40l7 7m0-7-7 7M591 169l10 10m0-10-10 10"/></g>
- <ellipse cx="368" cy="332" rx="247" ry="24" fill="#26130d" opacity=".53" filter="url(#shadow)"/>
- <g transform="translate(454 60)"><path d="M-4 142Q30 40 75 21M2 136Q-27 57-1 0" fill="none" stroke="#749268" stroke-width="7"/><g fill="#78976c" stroke="#4f6a48" stroke-width="2"><ellipse cx="4" cy="23" rx="19" ry="37" transform="rotate(-29 4 23)"/><ellipse cx="35" cy="63" rx="20" ry="37" transform="rotate(49 35 63)"/><ellipse cx="-15" cy="88" rx="20" ry="38" transform="rotate(-49 -15 88)"/><ellipse cx="63" cy="33" rx="14" ry="27" transform="rotate(45 63 33)"/><ellipse cx="43" cy="106" rx="18" ry="30" transform="rotate(39 43 106)"/></g></g>
- <g transform="translate(211 71) rotate(-8)"><path d="M12 38Q-23 10-4-21M28 45Q36-18 77-21" fill="none" stroke="#8db069" stroke-width="7"/><g fill="#668257"><ellipse cx="-5" cy="-21" rx="14" ry="29" transform="rotate(-27 -5 -21)"/><ellipse cx="72" cy="-23" rx="14" ry="27" transform="rotate(37 72 -23)"/><ellipse cx="33" cy="-5" rx="15" ry="34"/></g><path d="M6 38l68-2 7 108H2z" fill="#ead0a0"/><path d="M10 47h61" stroke="#aa865b" stroke-width="4"/></g>
- <g transform="translate(295 64)"><path d="M3 65C-11 8 55 4 48 72" stroke="#59714e" stroke-width="8" fill="none"/><path d="M14 19Q-9-8-23 17Q-4 46 14 19M32 18Q61-10 71 19Q45 41 32 18" fill="#73915a"/><ellipse cx="-3" cy="105" rx="76" ry="78" fill="url(#pumpkin)"/><ellipse cx="-4" cy="105" rx="47" ry="78" fill="#e79a4c"/><ellipse cx="-5" cy="105" rx="19" ry="78" fill="#f5b568"/><path d="M-6 35q-9-27 7-41" fill="none" stroke="#506e42" stroke-width="11" stroke-linecap="round"/></g>
- <g transform="translate(411 132)"><ellipse cx="0" cy="68" rx="61" ry="76" fill="url(#apple)"/><ellipse cx="24" cy="57" rx="24" ry="43" fill="#f49c61" opacity=".24"/><path d="M-6 3l10-36" stroke="#695537" stroke-width="9"/><path d="M8-28q37-26 50-4-27 27-50 4" fill="#789551"/><path d="M-28 24q-16 17-16 47" stroke="#ffc083" stroke-width="11" opacity=".5" fill="none" stroke-linecap="round"/></g>
- <g transform="translate(159 157)"><path d="M22 40Q-14 5 13-26M38 31Q65 6 65-23" stroke="#6e854d" stroke-width="5" fill="none"/><path d="M-8 24Q10 1 35 19Q40 57 9 67z" fill="#c8a454"/><path d="M33 26Q56-4 78 20Q89 56 51 66z" fill="#d8bb65"/></g>
- <path d="M146 210Q318 232 525 202l-27 104Q336 357 187 305z" fill="url(#basket)" stroke="#f4c58b" stroke-width="6"/>
- <path d="M152 219Q336 261 520 211" fill="none" stroke="#f3bf83" stroke-width="15" stroke-linecap="round"/>
- <g stroke="#6f462d" stroke-width="5" opacity=".58" fill="none"><path d="M178 233q45 51 71 86M229 241q41 56 65 90M285 249l32 87M349 249l-1 87M410 244l-24 87M465 231l-42 88M182 277q152 39 319-4"/></g>
- <path d="M181 209Q210 63 335 76Q453 72 487 215" fill="none" stroke="#b47c4d" stroke-width="15"/><path d="M182 209Q210 63 335 76Q453 72 487 215" fill="none" stroke="#e5ad76" stroke-width="4"/>
- <g opacity=".7" fill="#fae4b3"><circle cx="171" cy="188" r="3"/><circle cx="544" cy="143" r="3"/><circle cx="493" cy="37" r="2"/></g><rect width="650" height="370" filter="url(#texture)" opacity=".42"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 630 410" role="img" aria-label="A cute illustrated market basket filled with apples, herbs, bread and flowers">
+<defs><radialGradient id="a"><stop stop-color="#ffd8af" stop-opacity=".75"/><stop offset="1" stop-color="#f0ad80" stop-opacity="0"/></radialGradient><linearGradient id="b" x2="0" y2="1"><stop stop-color="#f8c69c"/><stop offset=".45" stop-color="#dc9f74"/><stop offset="1" stop-color="#ab6f54"/></linearGradient><linearGradient id="c" x2="0" y2="1"><stop stop-color="#ffdc9e"/><stop offset="1" stop-color="#ce8861"/></linearGradient></defs>
+<ellipse cx="367" cy="203" rx="286" ry="206" fill="url(#a)"/>
+<ellipse cx="340" cy="364" rx="240" ry="22" fill="#56382f" opacity=".32"/>
+<!-- delicate flowers -->
+<g stroke="#79997e" fill="none" stroke-width="7" stroke-linecap="round"><path d="M434 218Q472 78 532 35M448 220Q476 112 460 49M454 214Q561 122 583 102"/></g>
+<g fill="#f6c4bf" stroke="#ffe7d5" stroke-width="3"><circle cx="534" cy="33" r="23"/><circle cx="461" cy="49" r="21"/><circle cx="581" cy="99" r="23"/><circle cx="499" cy="91" r="22"/></g><g fill="#e7ac72"><circle cx="534" cy="33" r="8"/><circle cx="461" cy="49" r="8"/><circle cx="581" cy="99" r="8"/><circle cx="499" cy="91" r="8"/></g>
+<g fill="#96ae89"><ellipse cx="470" cy="118" rx="20" ry="36" transform="rotate(-30 470 118)"/><ellipse cx="553" cy="141" rx="19" ry="36" transform="rotate(50 553 141)"/><ellipse cx="512" cy="169" rx="18" ry="39" transform="rotate(-22 512 169)"/></g>
+<!-- baguettes and bread -->
+<g transform="translate(160 134) rotate(-22)"><rect x="-19" y="-44" width="70" height="184" rx="30" fill="#efbb83" stroke="#ffdfaf" stroke-width="6"/><g stroke="#c88b66" stroke-width="8" stroke-linecap="round"><path d="M-6-7l35-18M-6 41l35-18M-6 90l35-18"/></g></g>
+<!-- apples and pear -->
+<g transform="translate(319 152)"><path d="M-43 33c-54-16-68 48-40 97 17 39 67 48 89 19 31 30 76 15 89-25 20-67-25-105-68-91-21-9-46-8-70 0" fill="#db7f6b" stroke="#ffceae" stroke-width="7"/><path d="M10 35q-20-35 6-52" stroke="#657b50" stroke-width="9" fill="none"/><path d="M13-9q46-24 53 4-24 22-53-4" fill="#a5ad78"/></g>
+<g transform="translate(440 151)"><path d="M25-21q-30 42-10 77 54 68-18 110-68 13-85-47-8-40 30-70 16-29 9-66 30-31 74-4z" fill="#eabb76" stroke="#ffe2ac" stroke-width="6"/><path d="M-25-26q-5-20 15-35" stroke="#81956b" stroke-width="10" fill="none"/></g>
+<!-- pale gingham tote behind woven basket -->
+<path d="M124 209q35-124 192-115 179-6 207 117" stroke="#b77f62" stroke-width="17" fill="none"/>
+<path d="M112 222q190 43 432-7l-37 115q-190 65-345-3z" fill="url(#b)" stroke="#ffe0b2" stroke-width="7"/>
+<g stroke="#98664d" stroke-width="7" opacity=".5"><path d="M144 239q34 58 56 99M214 253q26 62 44 105M286 261l6 105M354 261l-8 110M423 254l-32 105M495 241l-44 104M157 301q181 40 353-2" fill="none"/></g>
+<path d="M114 221q197 53 427-4" stroke="#ffe1b4" stroke-width="18" fill="none" stroke-linecap="round"/>
+<!-- ribbon bow on basket, no faces -->
+<g transform="translate(325 300)"><path d="M-6-1Q-84-66-91-10q8 39 87 17Q-29 50-49 75l39 12 21-65Q43 85 82 77L32 14q77 17 85-25Q99-59 8 0" fill="#edb6b1" stroke="#fff0da" stroke-width="6"/><circle cx="4" cy="6" r="16" fill="#f9c7b9" stroke="#fff4e7" stroke-width="5"/></g>
+<!-- little lights and petals -->
+<g fill="#ffedc9" opacity=".94"><path d="M109 81l6 14 14 6-14 6-6 14-6-14-14-6 14-6z"/><path d="M582 207l5 12 12 5-12 5-5 12-5-12-12-5 12-5z"/><circle cx="72" cy="249" r="4"/><circle cx="554" cy="47" r="4"/></g></svg>

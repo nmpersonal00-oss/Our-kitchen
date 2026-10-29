@@ -1,15 +1,25 @@
 {
-  "name": "The Little Kitchen — Autumn Grocery List & Recipes",
+  "name": "The Little Kitchen \u2014 Kawaii Cottage",
   "short_name": "Little Kitchen",
   "description": "A cozy recipe diary with photos for every cooking step.",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#281b1a",
-  "theme_color": "#3b2723",
+  "background_color": "#3b2725",
+  "theme_color": "#65433b",
   "icons": [
-    {"src":"./assets/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"./assets/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+    {
+      "src": "./assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }

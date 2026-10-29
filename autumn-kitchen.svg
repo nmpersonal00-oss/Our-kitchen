@@ -1,16 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 1250" preserveAspectRatio="xMidYMid slice"><defs>
-<linearGradient id="night" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6e4132"/><stop offset=".55" stop-color="#482e29"/><stop offset="1" stop-color="#201916"/></linearGradient>
-<radialGradient id="gold"><stop stop-color="#ffba67" stop-opacity=".65"/><stop offset="1" stop-color="#ff9d54" stop-opacity="0"/></radialGradient>
-<filter id="blur"><feGaussianBlur stdDeviation="35"/></filter><filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".32" numOctaves="3" seed="11"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".09"/></feComponentTransfer></filter>
-</defs><rect width="700" height="1250" fill="url(#night)"/><ellipse cx="555" cy="300" rx="370" ry="400" fill="url(#gold)"/>
-<path d="M0 130H700M0 550H700" stroke="#241915" stroke-width="25" opacity=".52"/><path d="M65 0v730M630 0v730" stroke="#2b211e" stroke-width="28" opacity=".24"/>
-<!-- rustic pane and golden landscape -->
-<rect x="320" y="95" width="300" height="380" rx="10" fill="#251d1b" stroke="#845b43" stroke-width="18"/><rect x="337" y="112" width="265" height="347" fill="#b47b50"/><circle cx="529" cy="195" r="77" fill="#facb7e" opacity=".66"/><path d="M337 342q75-65 142-20t123-27v164H337" fill="#7d5d43"/><path d="M337 368q100-39 164 3t101-25v113H337" fill="#534839"/><path d="M465 112v347M337 289h265" stroke="#50372d" stroke-width="19"/>
-<!-- shelf --> <rect x="0" y="525" width="700" height="32" rx="7" fill="#3e281f" stroke="#9a6b46" stroke-width="8"/>
-<!-- mason jars --> <rect x="88" y="355" width="95" height="168" rx="18" fill="#bc855f" opacity=".52" stroke="#ddb08a" stroke-width="8"/><path d="M89 389h95" stroke="#ead1a9" stroke-width="12"/><rect x="202" y="404" width="71" height="120" rx="8" fill="#8c5940" stroke="#c58e62" stroke-width="8"/>
-<!-- dried eucalyptus --> <path d="M57 528q46-166-28-285M57 520q0-180 38-262" stroke="#a68d65" stroke-width="6" fill="none"/><g fill="#777e4e" opacity=".8"><ellipse cx="38" cy="346" rx="18" ry="37" transform="rotate(-20 38 346)"/><ellipse cx="90" cy="312" rx="18" ry="39" transform="rotate(30 90 312)"/><ellipse cx="18" cy="274" rx="17" ry="35" transform="rotate(-39 18 274)"/><ellipse cx="101" cy="387" rx="17" ry="35" transform="rotate(35 101 387)"/></g>
-<!-- countertop --> <rect x="-30" y="700" width="760" height="240" rx="24" fill="#67442f"/><path d="M0 733q260 23 700 6M0 785q240-13 700 17M0 847q360-26 700 5" fill="none" stroke="#a16e4b" stroke-width="6" opacity=".3"/>
-<!-- cookbook --> <g transform="rotate(-9 365 800)"><rect x="242" y="736" width="255" height="174" rx="12" fill="#d6b48f"/><rect x="255" y="741" width="115" height="156" rx="7" fill="#f8e5bc"/><rect x="373" y="741" width="113" height="156" rx="7" fill="#f9e8c6"/><path d="M370 744v152" stroke="#9f7455" stroke-width="6"/><g stroke="#b99c75" stroke-width="3" opacity=".7"><path d="M272 780h82M272 798h79M272 817h75M392 780h76M392 798h74M392 817h77"/></g></g>
-<!-- pumpkins --> <g transform="translate(130 778)"><ellipse rx="110" ry="89" fill="#a75527"/><ellipse rx="72" ry="90" fill="#cf7733"/><ellipse rx="34" ry="89" fill="#ed9b4a"/><path d="M-6-84q-9-29 15-47" stroke="#5a5e37" stroke-width="15" fill="none" stroke-linecap="round"/></g>
-<!-- warm warm light blooms --> <ellipse cx="150" cy="550" rx="220" ry="180" fill="url(#gold)" filter="url(#blur)"/><ellipse cx="590" cy="875" rx="230" ry="150" fill="url(#gold)" filter="url(#blur)"/>
-<g fill="#f4ba76" opacity=".72"><circle cx="150" cy="120" r="3"/><circle cx="665" cy="502" r="3"/><circle cx="285" cy="680" r="2"/><circle cx="605" cy="1004" r="3"/><circle cx="80" cy="1012" r="2"/></g><rect width="700" height="1250" filter="url(#grain)" opacity=".56"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 1260" preserveAspectRatio="xMidYMid slice">
+<defs>
+<linearGradient id="wall" x2="0" y2="1"><stop stop-color="#8e6050"/><stop offset=".55" stop-color="#75483c"/><stop offset="1" stop-color="#3c2925"/></linearGradient>
+<linearGradient id="window" x2="0" y2="1"><stop stop-color="#ffe6ba"/><stop offset=".46" stop-color="#e7a98c"/><stop offset="1" stop-color="#a19d82"/></linearGradient>
+<linearGradient id="wood" x2="0" y2="1"><stop stop-color="#d9a578"/><stop offset=".5" stop-color="#975d45"/><stop offset="1" stop-color="#57362e"/></linearGradient>
+<radialGradient id="sun"><stop stop-color="#ffe3a2" stop-opacity=".76"/><stop offset="1" stop-color="#f3b181" stop-opacity="0"/></radialGradient>
+<pattern id="floral" patternUnits="userSpaceOnUse" width="95" height="108"><path d="M10 35q12-19 26 0-14 16-26 0M46 72q17-21 27 2-16 12-27-2" fill="#f2b7a2" opacity=".22"/><path d="M22 32l12 31M60 66l8 20" stroke="#a4a87d" stroke-width="3" opacity=".32"/><circle cx="29" cy="36" r="3" fill="#fff0cf" opacity=".36"/><circle cx="61" cy="72" r="3" fill="#fff0cf" opacity=".3"/></pattern>
+<pattern id="gingham" patternUnits="userSpaceOnUse" width="28" height="28"><rect width="28" height="28" fill="#f5dac4"/><rect width="14" height="28" fill="#dba9a3" opacity=".42"/><rect width="28" height="14" fill="#dba9a3" opacity=".36"/><rect width="14" height="14" fill="#dca49f" opacity=".45"/></pattern>
+<filter id="soft"><feGaussianBlur stdDeviation="32"/></filter>
+</defs>
+<rect width="700" height="1260" fill="url(#wall)"/>
+<rect width="700" height="940" fill="url(#floral)"/>
+<!-- picture window -->
+<rect x="273" y="96" width="369" height="423" rx="28" fill="#50372f" stroke="#e4b78e" stroke-width="16"/>
+<rect x="295" y="113" width="325" height="390" rx="9" fill="url(#window)"/>
+<circle cx="519" cy="223" r="83" fill="#ffdfac" opacity=".8"/>
+<path d="M296 377q85-102 166-24 70 65 158-13v161H296" fill="#99a78c"/>
+<path d="M296 424q85-70 162-11 97 42 162-20v107H296" fill="#6b8067"/>
+<path d="M461 114v388M296 308h324" stroke="#dfb68f" stroke-width="19"/>
+<!-- scalloped curtains and bows -->
+<path d="M279 97q80 48 174 13 100 36 185-12v93q-39-30-76 4-39-31-72 2-41-35-78 0-36-33-71-3-36-27-62-1z" fill="url(#gingham)" stroke="#f8e4cb" stroke-width="6"/>
+<path d="M306 100q-50 81-40 236 57-34 87-91l-12-140zM609 101q35 95 26 243-49-47-63-107l-10-132z" fill="#f0c8b5" stroke="#ffe7d0" stroke-width="6"/>
+<path d="M328 237q-18-23-35-15 2 17 29 25-29 13-28 30 23 0 36-27 14 28 36 29 3-21-30-33 29-13 27-25-21-6-35 16" fill="#efb2a2" stroke="#fff3df" stroke-width="4"/>
+<!-- upper cupboards -->
+<path d="M12 118h231v414H12z" fill="#724a3a" stroke="#cf936b" stroke-width="12"/>
+<rect x="31" y="140" width="192" height="176" rx="13" fill="#9d684a" stroke="#e2aa77" stroke-width="6"/>
+<rect x="31" y="335" width="192" height="172" rx="13" fill="#8c5845" stroke="#e2aa77" stroke-width="6"/>
+<g fill="#f5d59d"><circle cx="190" cy="228" r="9"/><circle cx="190" cy="421" r="9"/></g>
+<!-- cookbook shelf -->
+<rect x="0" y="564" width="700" height="31" rx="9" fill="url(#wood)" stroke="#ebbd8b" stroke-width="5"/>
+<g transform="translate(48 423)"><rect width="79" height="140" rx="16" fill="#e6c8b4" stroke="#fff1d8" stroke-width="5"/><rect x="8" y="39" width="63" height="80" rx="9" fill="#b97b75"/><path d="M15 63q23 18 47 0" stroke="#ffe0bf" stroke-width="5" fill="none"/><rect x="10" y="0" width="59" height="15" rx="5" fill="#e9ad83"/></g>
+<g transform="translate(157 451)"><rect width="50" height="113" rx="5" fill="#a5a983"/><rect x="51" width="42" height="113" rx="6" fill="#daa3a2"/><rect x="95" y="17" width="44" height="96" rx="5" fill="#e5b77c"/><g stroke="#fff4d9" stroke-width="4" opacity=".65"><path d="M8 16v72M63 16v74M104 29v57"/></g></g>
+<!-- hanging tools -->
+<path d="M40 625h230" stroke="#c99168" stroke-width="9" stroke-linecap="round"/><g stroke="#f4d3a8" stroke-width="9" fill="none" stroke-linecap="round"><path d="M82 638v108M154 638v108M232 638v108"/><ellipse cx="82" cy="758" rx="27" ry="36"/><ellipse cx="154" cy="757" rx="15" ry="34"/><path d="M216 752l31 1m-28-25 27 1m-26 47 27-1"/></g>
+<!-- herb planter and greenery -->
+<g transform="translate(530 566)"><path d="M28 71Q-25-16 6-52M28 71Q65-17 87-42M28 71Q-42 10-38-25" fill="none" stroke="#7f9c73" stroke-width="8" stroke-linecap="round"/><g fill="#b3b58a" stroke="#6d865f" stroke-width="2"><ellipse cx="-4" cy="-41" rx="15" ry="32" transform="rotate(-38 -4 -41)"/><ellipse cx="73" cy="-33" rx="15" ry="30" transform="rotate(32 73 -33)"/><ellipse cx="-36" cy="-12" rx="15" ry="28" transform="rotate(-55 -36 -12)"/><ellipse cx="8" cy="5" rx="15" ry="28" transform="rotate(-25 8 5)"/><ellipse cx="59" cy="16" rx="15" ry="30" transform="rotate(42 59 16)"/></g><path d="M-29 69h116l-19 102H-12z" fill="#e9b6a2" stroke="#fff1ca" stroke-width="6"/><path d="M-12 103h80" stroke="#fff0d7" stroke-width="5"/></g>
+<!-- counter and back wall, wallpaper trim -->
+<rect x="0" y="793" width="700" height="21" fill="#e9bc95"/>
+<path d="M0 799Q165 770 354 803 541 829 700 795V1260H0" fill="url(#wood)"/>
+<rect x="0" y="856" width="700" height="86" fill="url(#gingham)" opacity=".73"/>
+<path d="M0 856h700M0 942h700" stroke="#f7d6b4" stroke-width="9"/>
+<!-- stove / cream teapot -->
+<g transform="translate(370 929)"><ellipse cx="50" cy="165" rx="155" ry="27" fill="#392520" opacity=".45"/><path d="M-40 81q-10-112 92-114 96 0 96 105 0 95-95 110-90-18-93-101z" fill="#f2cfad" stroke="#ffe9d0" stroke-width="11"/><path d="M148 51q75-20 79 43-2 63-86 33" fill="none" stroke="#f6d1ac" stroke-width="19"/><path d="M-30 72q-58-15-83-47 68-5 92 10" fill="#efb3a1" stroke="#ffe2c5" stroke-width="7"/><path d="M6-38q40-53 90 0" fill="none" stroke="#f8ddbb" stroke-width="17"/><circle cx="50" cy="-39" r="12" fill="#f8e2b2"/><g fill="none" stroke="#ffedd0" stroke-width="9" stroke-linecap="round" opacity=".75"><path d="M7-113q-25-26 0-56M68-115q-24-30 1-59"/></g><path d="M20 101q29 17 63-5" fill="none" stroke="#dba88b" stroke-width="8"/></g>
+<!-- mini pumpkin, rolling pin -->
+<g transform="translate(98 1023)"><ellipse cx="0" cy="41" rx="94" ry="80" fill="#d68c57"/><ellipse cy="40" rx="63" ry="81" fill="#f3aa73"/><ellipse cy="40" rx="25" ry="82" fill="#ffd099"/><path d="M-4-40Q-11-81 13-90" fill="none" stroke="#82966a" stroke-width="15" stroke-linecap="round"/><path d="M13-81q55-27 69 6-40 21-69-6" fill="#a4ad81"/></g>
+<g transform="translate(192 1160) rotate(-16)"><rect x="0" y="0" width="293" height="58" rx="27" fill="#d8a36e" stroke="#f4c994" stroke-width="7"/><path d="M-44 28H5M286 28h52" stroke="#e6c08f" stroke-width="20" stroke-linecap="round"/></g>
+<!-- heart and star motifs without faces -->
+<g fill="#ffe2b1" opacity=".88"><path d="M91 98c-14-18-37 4 0 27 37-23 14-45 0-27"/><path d="M648 686l7 17 18 7-18 7-7 18-7-18-18-7 18-7z"/><circle cx="290" cy="655" r="5"/><circle cx="615" cy="1160" r="4"/><path d="M49 882l6 16 17 6-17 6-6 17-6-17-17-6 17-6z"/></g>
+<ellipse cx="525" cy="323" rx="290" ry="340" fill="url(#sun)" opacity=".4" filter="url(#soft)"/>
+</svg>
