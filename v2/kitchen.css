@@ -32,3 +32,15 @@ html.lk-installed-phone .app{
  min-height:var(--lk-installed-height,100dvh)!important;
  max-height:none!important;border-radius:0!important;box-shadow:none!important
 }
+
+/* Grocery hero: show the existing user-provided shopping-bunny asset. */
+.grocery-hero .grocery-bunny{position:absolute;right:3px;bottom:0;width:126px;height:131px;object-fit:contain;object-position:center bottom;pointer-events:none;z-index:0}
+.grocery-hero .grocery-hero-copy{position:relative;z-index:1;padding-right:105px}
+.grocery-hero .label{font-size:10px;letter-spacing:1.5px}
+.grocery-hero h1{font-size:clamp(30px,9.3vw,44px)}
+.quick-add input[type="search"]{-webkit-appearance:none;appearance:none;font-size:16px}
+@media(max-width:370px){.grocery-hero .grocery-bunny{width:112px;height:123px;right:0}.grocery-hero .grocery-hero-copy{padding-right:90px}.grocery-hero .label{font-size:9px;letter-spacing:1px}}
+
+/* Approved glowing kawaii bunny sticker replaces only the Settings shortcut artwork. */
+.brand-icon{overflow:visible}
+.brand-icon img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 5px rgba(255,212,140,.8))}
