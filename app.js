@@ -65,17 +65,6 @@ function updateTabScene(){
  const src=REFERENCE_SCENES[scene]||REFERENCE_SCENES.recipes;
  if(el && el.dataset.scene!==scene){el.dataset.scene=scene;el.src=src;}
  document.getElementById('app')?.setAttribute('data-scene',scene);
- // Extend only the artwork to the iPhone viewport. No shell or navigation resize.
- if(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true){
-   const intended=src;
-   const image=new Image();
-   image.onload=()=>{
-     if((REFERENCE_SCENES[tab]||REFERENCE_SCENES.recipes)!==intended)return;
-     document.documentElement.style.setProperty('--kitchen-viewport-art','url("'+intended+'")');
-     document.documentElement.classList.add('kitchen-art-to-edge');
-   };
-   image.src=intended;
- }
 }
 
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains('recipes'))d.createObjectStore('recipes',{keyPath:'id'});if(!d.objectStoreNames.contains('meta'))d.createObjectStore('meta',{keyPath:'key'});if(!d.objectStoreNames.contains('groceries'))d.createObjectStore('groceries',{keyPath:'id'});if(!d.objectStoreNames.contains('outbox'))d.createObjectStore('outbox',{keyPath:'key'});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
@@ -202,7 +191,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)requestSyn
 setInterval(()=>{if(cloudUser)syncCloud();},25000);
 document.addEventListener('click',e=>{if(e.target.closest('button,.nav-btn,[data-action]'))cuteClickSound();},true);
 
-async function initialize(){try{db=await openDB();const records=await readAll('meta');const stored=Object.fromEntries(records.map(v=>[v.key,v.value]));prefs={glow:stored.glow!==false,theme:stored.theme||'cinnamon',budget:Number(stored.budget)||0,sounds:stored.sounds!==false};recipes=await readAll('recipes');groceries=await readAll('groceries');if(!stored.initialized){for(const r of demo)await put('recipes',r);recipes=await readAll('recipes');await put('meta',{key:'initialized',value:true});}render();startCloud();if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=17').catch(()=>{});}catch(err){console.error(err);screen.innerHTML=`<div class="empty"><h3>Couldn't open your recipe diary</h3><p>Your browser may be blocking storage. Try opening this site in a normal browser tab rather than a private window.</p></div>`;}}
+async function initialize(){try{db=await openDB();const records=await readAll('meta');const stored=Object.fromEntries(records.map(v=>[v.key,v.value]));prefs={glow:stored.glow!==false,theme:stored.theme||'cinnamon',budget:Number(stored.budget)||0,sounds:stored.sounds!==false};recipes=await readAll('recipes');groceries=await readAll('groceries');if(!stored.initialized){for(const r of demo)await put('recipes',r);recipes=await readAll('recipes');await put('meta',{key:'initialized',value:true});}render();startCloud();if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=18').catch(()=>{});}catch(err){console.error(err);screen.innerHTML=`<div class="empty"><h3>Couldn't open your recipe diary</h3><p>Your browser may be blocking storage. Try opening this site in a normal browser tab rather than a private window.</p></div>`;}}
 const sortRec=(arr)=>[...arr].sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
 const byId=r=>recipes.find(x=>x.id===r);
 const niceDate=()=>new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric'}).format(new Date());
