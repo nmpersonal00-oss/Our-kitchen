@@ -205,18 +205,6 @@ body{height:100%;background:#57392f}
   /* Match the area around the Home indicator instead of exposing black body. */
   body,.app-shell{background-color:#57392f}
 }
-/* iOS Home Screen app: fixed inset edges are more stable than 100dvh
-   when the app opens or resumes. Installed Chrome/Android PWAs work too. */
-@media(max-width:719px) and (display-mode:standalone){
-  html,body{height:100%;min-height:100%;width:100%;overflow:hidden}
-  .app-shell{position:fixed;top:0;right:0;bottom:0;left:0;height:auto!important;min-height:0!important;max-height:none!important;width:100%;margin:0;border-radius:0}
-}
-/* Older iOS versions report navigator.standalone without matching the media query. */
-@media(max-width:719px){
-  html.ios-standalone .app-shell{position:fixed;inset:0;height:auto!important;max-height:none!important;min-height:0!important;width:100%;margin:0;border-radius:0}
-}
-
-
 /* V8: user-provided exact cleaned illustrated background assets; examples govern the UI. */
 :root {
   --paper:#fff7e8;
@@ -365,26 +353,15 @@ html,body {background:#482719!important}
 @media(prefers-reduced-motion:reduce){.tab-scene{transition:none!important}}
 
 
-/* iPhone Home Screen: retain all existing fixed-position layers, but do not
-   let the shell's auto height stop short of the dynamic viewport. */
-@media (max-width: 719px) and (display-mode: standalone) {
-  .app-shell { height: 100dvh !important; }
-}
-@media (max-width: 719px) {
-  html.ios-standalone .app-shell { height: 100dvh !important; }
-}
-
-
-/* iOS installed PWA: paint the same tab artwork on the document behind the
-   existing screen shell to cover the exposed bottom viewport. Do not resize
-   the shell, shift navigation, or replace user-provided artwork. */
-@media(max-width:719px) and (display-mode:standalone){
- html.kitchen-art-to-edge{background-image:var(--kitchen-viewport-art)!important;background-size:cover!important;background-position:center center!important;background-repeat:no-repeat!important}
- html.kitchen-art-to-edge body,html.kitchen-art-to-edge .app-shell{background:transparent!important}
-}
+/* Match the proven Wifey & Hubby Home Screen structure.
+   The app remains in normal flow, at exactly the dynamic viewport height.
+   Background and controls stay inside the same full-screen shell. */
 @media(max-width:719px){
- html.ios-standalone.kitchen-art-to-edge{background-image:var(--kitchen-viewport-art)!important;background-size:cover!important;background-position:center center!important;background-repeat:no-repeat!important}
- html.ios-standalone.kitchen-art-to-edge body,html.ios-standalone.kitchen-art-to-edge .app-shell{background:transparent!important}
+ html,body{margin:0;min-height:100%;overflow:hidden}
+ .app-shell{position:relative!important;inset:auto!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;
+   width:100%!important;height:100dvh!important;min-height:0!important;max-height:none!important;margin:0!important;border-radius:0!important}
+ .tab-scene,.tab-scene img{height:100%!important;width:100%!important}
+ .tab-scene img{object-fit:fill!important;object-position:center!important}
 }
 
 </style>
@@ -476,17 +453,6 @@ function updateTabScene(){
  const src=REFERENCE_SCENES[scene]||REFERENCE_SCENES.recipes;
  if(el && el.dataset.scene!==scene){el.dataset.scene=scene;el.src=src;}
  document.getElementById('app')?.setAttribute('data-scene',scene);
- // Extend only the artwork to the iPhone viewport. No shell or navigation resize.
- if(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true){
-   const intended=src;
-   const image=new Image();
-   image.onload=()=>{
-     if((REFERENCE_SCENES[tab]||REFERENCE_SCENES.recipes)!==intended)return;
-     document.documentElement.style.setProperty('--kitchen-viewport-art','url("'+intended+'")');
-     document.documentElement.classList.add('kitchen-art-to-edge');
-   };
-   image.src=intended;
- }
 }
 
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains('recipes'))d.createObjectStore('recipes',{keyPath:'id'});if(!d.objectStoreNames.contains('meta'))d.createObjectStore('meta',{keyPath:'key'});if(!d.objectStoreNames.contains('groceries'))d.createObjectStore('groceries',{keyPath:'id'});if(!d.objectStoreNames.contains('outbox'))d.createObjectStore('outbox',{keyPath:'key'});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
@@ -613,7 +579,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)requestSyn
 setInterval(()=>{if(cloudUser)syncCloud();},25000);
 document.addEventListener('click',e=>{if(e.target.closest('button,.nav-btn,[data-action]'))cuteClickSound();},true);
 
-async function initialize(){try{db=await openDB();const records=await readAll('meta');const stored=Object.fromEntries(records.map(v=>[v.key,v.value]));prefs={glow:stored.glow!==false,theme:stored.theme||'cinnamon',budget:Number(stored.budget)||0,sounds:stored.sounds!==false};recipes=await readAll('recipes');groceries=await readAll('groceries');if(!stored.initialized){for(const r of demo)await put('recipes',r);recipes=await readAll('recipes');await put('meta',{key:'initialized',value:true});}await syncExactDemoRecipes();recipes=await readAll('recipes');render();startCloud();if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=17').catch(()=>{});}catch(err){console.error(err);screen.innerHTML=`<div class="empty"><h3>Couldn't open your recipe diary</h3><p>Your browser may be blocking storage. Try opening this site in a normal browser tab rather than a private window.</p></div>`;}}
+async function initialize(){try{db=await openDB();const records=await readAll('meta');const stored=Object.fromEntries(records.map(v=>[v.key,v.value]));prefs={glow:stored.glow!==false,theme:stored.theme||'cinnamon',budget:Number(stored.budget)||0,sounds:stored.sounds!==false};recipes=await readAll('recipes');groceries=await readAll('groceries');if(!stored.initialized){for(const r of demo)await put('recipes',r);recipes=await readAll('recipes');await put('meta',{key:'initialized',value:true});}await syncExactDemoRecipes();recipes=await readAll('recipes');render();startCloud();if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=18').catch(()=>{});}catch(err){console.error(err);screen.innerHTML=`<div class="empty"><h3>Couldn't open your recipe diary</h3><p>Your browser may be blocking storage. Try opening this site in a normal browser tab rather than a private window.</p></div>`;}}
 const sortRec=(arr)=>[...arr].sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
 const byId=r=>recipes.find(x=>x.id===r);
 const niceDate=()=>new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric'}).format(new Date());
