@@ -1,5 +1,5 @@
 /* Little Kitchen V8: same-origin app and artwork offline cache. */
-const CACHE = 'little-kitchen-v15-restore-known-working-artwork';
+const CACHE = 'little-kitchen-v16-iphone-height-only';
 const SHELL = ['./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE)
