@@ -164,3 +164,36 @@ html,body {background:#482719!important}
 @media(prefers-reduced-motion:reduce){
  .tab-scene img.scene-entering{transition:none!important}
 }
+
+
+/* V13: iOS Home Screen PWA edge-to-edge fix.
+   A fixed, inset:0 shell can stop at the shorter visual viewport and expose the
+   plain html/body background below the illustrated scene on iPhone.
+   Use the same relative 100dvh shell sizing as the working standalone app;
+   keep the navigation's existing safe-area offset so it clears the Home indicator. */
+@media (max-width:719px) {
+  html.ios-standalone .app-shell {
+    position:relative!important;
+    top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;
+    inset:auto!important;
+    height:100dvh!important;
+    min-height:0!important;
+    max-height:none!important;
+    width:100%!important;
+    margin:0!important;
+    border-radius:0!important;
+  }
+}
+@media (max-width:719px) and (display-mode:standalone) {
+  .app-shell {
+    position:relative!important;
+    top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;
+    inset:auto!important;
+    height:100dvh!important;
+    min-height:0!important;
+    max-height:none!important;
+    width:100%!important;
+    margin:0!important;
+    border-radius:0!important;
+  }
+}
