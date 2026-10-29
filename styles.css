@@ -174,3 +174,30 @@ body.ambient-off .fireflies,body.ambient-off .grain{display:none}body.ambient-of
 .recipe-list-heading .page-title{position:relative;z-index:1;white-space:nowrap}
 .list-bunny-mini{position:absolute;right:-7px;top:-9px;width:130px;height:123px;object-fit:contain;object-position:center center;pointer-events:none;filter:drop-shadow(0 4px 8px #48312c75)}
 @media(max-width:360px){.recipe-list-heading{padding-right:97px}.list-bunny-mini{width:110px;height:118px}.recipe-list-heading .page-title{font-size:33px}}
+
+
+/* V7 | iPhone home-indicator / PWA viewport stabilization.
+   Scroll ONLY the content, not the document. Avoid the iOS 100dvh black chin
+   in installed PWAs by letting fixed inset edges determine the full height. */
+html,body{margin:0;padding:0;min-height:0;overscroll-behavior:none}
+html{height:100%;background:#57392f}
+body{height:100%;background:#57392f}
+@media(max-width:719px){
+  html,body{width:100%;height:100%;overflow:hidden}
+  .app-shell{height:100dvh;min-height:0;max-height:none;overflow:hidden}
+  .screen{overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+  .app-shell.settings-active .bottom-nav{display:none!important}
+  .app-shell.settings-active .screen{bottom:calc(8px + var(--bottom-inset));padding-bottom:calc(28px + var(--bottom-inset))}
+  /* Match the area around the Home indicator instead of exposing black body. */
+  body,.app-shell{background-color:#57392f}
+}
+/* iOS Home Screen app: fixed inset edges are more stable than 100dvh
+   when the app opens or resumes. Installed Chrome/Android PWAs work too. */
+@media(max-width:719px) and (display-mode:standalone){
+  html,body{height:100%;min-height:100%;width:100%;overflow:hidden}
+  .app-shell{position:fixed;top:0;right:0;bottom:0;left:0;height:auto!important;min-height:0!important;max-height:none!important;width:100%;margin:0;border-radius:0}
+}
+/* Older iOS versions report navigator.standalone without matching the media query. */
+@media(max-width:719px){
+  html.ios-standalone .app-shell{position:fixed;inset:0;height:auto!important;max-height:none!important;min-height:0!important;width:100%;margin:0;border-radius:0}
+}
