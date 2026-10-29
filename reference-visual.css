@@ -64,7 +64,7 @@ html,body {background:#482719!important}
 .grocery-head .page-title{font-size:42px!important;margin:11px 0 11px!important}
 .grocery-head .eyebrow{font-size:10px!important}
 .grocery-head .grocery-status{font-size:13px!important;color:#f9e9d9!important}
-.grocery-illustration{inset:-9px -18px -3px 40%!important;background-image:url('./assets/reference-grocery-bunny.webp')!important;background-size:cover!important;background-position:center!important;filter:none!important;opacity:1!important}
+.grocery-illustration{inset:-9px -18px -3px 40%!important;background-image:url('./reference-grocery-bunny.webp')!important;background-size:cover!important;background-position:center!important;filter:none!important;opacity:1!important}
 .grocery-quick-simple {height:58px!important;margin:0 0 16px!important;padding:5px!important;border:1.5px solid #ffe1c5!important;border-radius:18px!important;background:#40251ef2!important;box-shadow:0 0 11px #ffc890a0,inset 0 2px 7px #2a120e!important}
 .grocery-quick-simple input{font-size:16px!important;color:#fff0e4!important;padding-left:12px!important}
 .grocery-quick-simple input::placeholder{color:#f5cbae!important}
