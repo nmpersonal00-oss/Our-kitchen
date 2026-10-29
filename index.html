@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#3b2723">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Little Kitchen">
+  <meta name="description" content="An illustrated recipe and grocery list app with photos for every cooking step.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./assets/icon-192.png">
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./visual-upgrade.css">
+  <title>The Little Kitchen · Groceries & Recipes</title>
+</head>
+<body>
+  <div class="app-shell" id="app">
+    <div class="ambient-art" aria-hidden="true"></div>
+    <div class="ambient-veil" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="fireflies" aria-hidden="true">✧ <span>✧</span> <i>✧</i></div>
+    <header class="app-header" id="app-header"></header>
+    <main class="screen" id="screen" tabindex="-1"></main>
+    <nav class="bottom-nav" id="bottom-nav" aria-label="Main navigation"></nav>
+    <div id="overlay-root"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+  <input type="file" id="media-picker" accept="image/*" hidden>
+  <input type="file" id="import-picker" accept="application/json,.json" hidden>
+  <script src="./app.js" defer></script>
+</body>
+</html>
