@@ -1,6 +1,6 @@
 /* Little Kitchen V8: same-origin app and artwork offline cache. */
-const CACHE = 'little-kitchen-v10-exact-reference';
-const SHELL = ['./index.html','./manifest.webmanifest','./assets/icon-192.png','./assets/icon-512.png'];
+const CACHE = 'little-kitchen-v11-correct-root-assets';
+const SHELL = ['./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE)
     .then(async cache => { await cache.add('./index.html'); await Promise.allSettled(SHELL.slice(1).map(path => cache.add(path))); })
