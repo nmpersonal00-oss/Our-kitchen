@@ -191,18 +191,6 @@ body{height:100%;background:#57392f}
   /* Match the area around the Home indicator instead of exposing black body. */
   body,.app-shell{background-color:#57392f}
 }
-/* iOS Home Screen app: fixed inset edges are more stable than 100dvh
-   when the app opens or resumes. Installed Chrome/Android PWAs work too. */
-@media(max-width:719px) and (display-mode:standalone){
-  html,body{height:100%;min-height:100%;width:100%;overflow:hidden}
-  .app-shell{position:fixed;top:0;right:0;bottom:0;left:0;height:auto!important;min-height:0!important;max-height:none!important;width:100%;margin:0;border-radius:0}
-}
-/* Older iOS versions report navigator.standalone without matching the media query. */
-@media(max-width:719px){
-  html.ios-standalone .app-shell{position:fixed;inset:0;height:auto!important;max-height:none!important;min-height:0!important;width:100%;margin:0;border-radius:0}
-}
-
-
 /* V8: user-provided exact cleaned illustrated background assets; examples govern the UI. */
 :root {
   --paper:#fff7e8;
@@ -349,3 +337,14 @@ html,body {background:#482719!important}
  .nav-btn{font-size:10px!important}
 }
 @media(prefers-reduced-motion:reduce){.tab-scene{transition:none!important}}
+
+/* Match the proven Wifey & Hubby Home Screen structure.
+   The app remains in normal flow, at exactly the dynamic viewport height.
+   Background and controls stay inside the same full-screen shell. */
+@media(max-width:719px){
+ html,body{margin:0;min-height:100%;overflow:hidden}
+ .app-shell{position:relative!important;inset:auto!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;
+   width:100%!important;height:100dvh!important;min-height:0!important;max-height:none!important;margin:0!important;border-radius:0!important}
+ .tab-scene,.tab-scene img{height:100%!important;width:100%!important}
+ .tab-scene img{object-fit:fill!important;object-position:center!important}
+}
