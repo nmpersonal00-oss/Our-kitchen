@@ -1,20 +1,37 @@
-# The Little Kitchen V7 — iPhone Layout Fix
+# The Little Kitchen — V8 Reference-Matched Visuals
 
-This update fixes the installed iPhone app viewport and improves Settings. It does **not** change your saved recipes, groceries, cloud credentials, database schema, photos, or sounds.
+This is the actual functioning recipe and grocery web app, revised using the exact six `CLEANED` images supplied in the conversation, and the six `EXAMPLE` screenshots as layout/style references. It is **not** a mockup. No new generated image substitutes are used for your cleaned background pictures.
 
-## Changes
+## What's new
 
-- Home Screen web apps use a fixed full-viewport layout instead of relying solely on `100dvh`. This targets the extra dark band sometimes displayed below the app on iOS.
-- Scrolling stays within the recipe/grocery/settings content, keeping the header and bottom navigation stable.
-- Settings hides the app's bottom navigation, giving the cloud sign-in and appearance panels more room. Close Settings with the X in the header.
-- Background now matches the app's brown palette instead of black if the browser exposes an area around the home indicator.
-- Service-worker cache version is increased to encourage updated files to replace the old version.
+- All six original CLEANED screenshots are bundled losslessly as backgrounds: Groceries, Recipes, Food, Drinks, Desserts, and Settings.
+- Recipe card artwork for the six matching sample dishes is cropped from the supplied example images. The rice pudding and brownie illustrations remain paired with their actual recipes rather than being mislabeled with unrelated cake photos. Personal photos and user-uploaded step pictures are not replaced.
+- Refined typography, brown translucent recipe cards, search/filters, peach buttons, pink interactive accents, rounded grocery checklist, branded header, and bottom tabs to follow the provided example screens.
+- Settings uses the reference-style peach sections: Shared cloud, Sounds, Backups, and Recipes. Additional existing controls remain inside **More settings**.
+- iPhone safe-area layout inherited from V7. Settings remains a full-height scroll view without bottom tabs.
+- Improved Service Worker caching of app assets as they're loaded, and a versioned cache to prevent stale designs.
 
-## How to publish
+## Existing features preserved
 
-1. Back up from **Settings → Backups → Export** before replacing files.
-2. Upload the complete contents of this ZIP to the same folder/site as your existing Little Kitchen version. Keep the existing URL.
-3. Fully close the iPhone Home Screen app and open it again to pick up the updated service worker. If you still see the older layout, ensure the new `index.html` and `sw.js` are both published; sometimes iOS requires reopening twice after a service-worker refresh.
-4. Test Settings, grocery checklist, and recipe photo uploads. Your data remains in the same local database and the configured Supabase project.
+- IndexedDB recipes and grocery items, and simple Add Item / check-off / edit / delete.
+- Recipe editor, ingredients, notes, cover photos, and photos for **every cooking step**.
+- Recipe-to-grocery ingredient import, favorites, and search.
+- Existing Supabase multi-app URL + public key, private photo storage integration, offline change queue, and shared account login.
+- Sound effects, backup import and export.
 
-**iOS limitation:** The thin white/gray swipe-up *Home indicator* belongs to iOS; websites cannot remove it. This fix addresses the avoidable blank area and layout jitter **around** it, not the operating system's gesture bar. This version was browser-tested with phone-sized viewports, not physically tested on iPhone.
+**Do not create a new Supabase project or change login details for this visual update.** No SQL migration is required; this release only changes front-end artwork and styling.
+
+## Publish correctly
+
+1. Export a backup in Settings before updating.
+2. Extract the ZIP and publish **`index.html`, `sw.js`, `manifest.webmanifest`, and the entire `assets/` folder together** to the website's existing folder. Keep paths and capitalization unchanged.
+3. Open/reload your iPhone Home Screen app, and check all six tab backgrounds.
+4. Sign in under Settings if necessary and check cloud sync. Use the same existing account on both phones.
+
+The app must be served over HTTPS for installable PWA and cloud features. Do not use `file://` for normal use. Existing user recipes are kept by IndexedDB on the same origin; moving to a different hostname/path or clearing browser data can affect local storage.
+
+## Tests
+
+- JavaScript syntax validated with Node and asset paths/PNG files verified in the package.
+- Mobile-browser isolated UI test exercised adding/checking groceries, tab navigation, Settings/sounds control, recipe details, and recipe editor. All tested UI interactions completed.
+- Supabase real-account sign-in, cross-device sync, photo transfer, and physical iPhone visual positioning were not retested in this visual-only revision.
