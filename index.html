@@ -364,27 +364,6 @@ html,body {background:#482719!important}
 }
 @media(prefers-reduced-motion:reduce){.tab-scene{transition:none!important}}
 
-
-
-/* V12: keep the prior CLEANED artwork visible while the next tab image decodes. */
-.tab-scene img.scene-image,
-.tab-scene img#tab-scene-img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center center!important;filter:none!important}
-.tab-scene img.scene-entering{opacity:0!important;transition:opacity 340ms ease-in-out!important;will-change:opacity}
-.tab-scene img.scene-entering.scene-revealed{opacity:1!important}
-.tab-scene img.scene-visible{opacity:1!important;transition:none!important}
-@media(max-width:719px){
- /* Only reserve what is required for the five-button dock + iOS gesture area. */
- .bottom-nav{bottom:calc(3px + env(safe-area-inset-bottom,0px))!important}
- .screen{bottom:calc(75px + env(safe-area-inset-bottom,0px))!important}
- .app-shell.settings-active .screen{bottom:calc(3px + env(safe-area-inset-bottom,0px))!important}
-}
-@media(max-width:719px) and (display-mode:standalone){
- .app-shell{position:fixed!important;inset:0!important;height:auto!important;min-height:0!important}
-}
-@media(prefers-reduced-motion:reduce){
- .tab-scene img.scene-entering{transition:none!important}
-}
-
 </style>
   <title>The Little Kitchen · Groceries & Recipes</title>
 </head>
@@ -468,67 +447,13 @@ const REFERENCE_SCENES=Object.freeze({
  dessert:'./reference-dessert.png',
  settings:'./reference-settings.png'
 });
-const sceneImageCache=new Map();
-let sceneTransitionId=0;
-function prepareSceneImage(scene){
- const src=REFERENCE_SCENES[scene]||REFERENCE_SCENES.recipes;
- if(!sceneImageCache.has(scene)){
-   const img=new Image();
-   img.decoding='async';
-   img.src=src;
-   const ready=new Promise(resolve=>{
-     if(img.complete&&img.naturalWidth){resolve(true);return;}
-     img.addEventListener('load',()=>resolve(true),{once:true});
-     img.addEventListener('error',()=>resolve(false),{once:true});
-   });
-   sceneImageCache.set(scene,{img,ready});
- }
- return sceneImageCache.get(scene);
-}
-function preloadTabScenes(){
- // Begin fetching every supplied background before its tab is opened.
- for(const name of Object.keys(REFERENCE_SCENES)) prepareSceneImage(name);
-}
 function updateTabScene(){
+ const el=$('#tab-scene-img');
  const scene=tab==='settings'?'settings':tab;
- const shell=document.getElementById('app');
- shell?.setAttribute('data-scene',scene);
- const holder=shell?.querySelector('.tab-scene');
- if(!holder)return;
- const id=++sceneTransitionId;
- const target=prepareSceneImage(scene);
- const previous=holder.querySelector('img.scene-visible, img#tab-scene-img');
- if(previous?.dataset.scene===scene)return;
- target.ready.then(ok=>{
-   if(!ok||id!==sceneTransitionId)return;
-   const current=holder.querySelector('img.scene-visible, img#tab-scene-img');
-   if(current?.dataset.scene===scene)return;
-   const next=document.createElement('img');
-   next.alt='';
-   next.setAttribute('aria-hidden','true');
-   next.decoding='async';
-   next.dataset.scene=scene;
-   next.className='scene-image scene-entering';
-   next.src=target.img.src;
-   holder.appendChild(next);
-   const finish=()=>{
-     if(next.parentNode!==holder)return;
-     next.classList.remove('scene-entering');
-     next.classList.add('scene-visible');
-     holder.querySelectorAll('img').forEach(img=>{if(img!==next)img.remove();});
-   };
-   if(!current||window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-     finish();
-   }else{
-     requestAnimationFrame(()=>requestAnimationFrame(()=>{
-       if(id!==sceneTransitionId){next.remove();return;}
-       next.classList.add('scene-revealed');
-       next.addEventListener('transitionend',finish,{once:true});
-       setTimeout(finish,520);
-     }));
-   }
- });
+ if(el && el.dataset.scene!==scene){el.dataset.scene=scene;el.src=REFERENCE_SCENES[scene]||REFERENCE_SCENES.recipes;}
+ document.getElementById('app')?.setAttribute('data-scene',scene);
 }
+
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains('recipes'))d.createObjectStore('recipes',{keyPath:'id'});if(!d.objectStoreNames.contains('meta'))d.createObjectStore('meta',{keyPath:'key'});if(!d.objectStoreNames.contains('groceries'))d.createObjectStore('groceries',{keyPath:'id'});if(!d.objectStoreNames.contains('outbox'))d.createObjectStore('outbox',{keyPath:'key'});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
 function readAll(store){return new Promise((resolve,reject)=>{const t=db.transaction(store,'readonly');const req=t.objectStore(store).getAll();req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
 function rawPut(store,obj){return new Promise((resolve,reject)=>{const t=db.transaction(store,'readwrite');t.objectStore(store).put(obj);t.oncomplete=resolve;t.onerror=()=>reject(t.error);});}
@@ -653,7 +578,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)requestSyn
 setInterval(()=>{if(cloudUser)syncCloud();},25000);
 document.addEventListener('click',e=>{if(e.target.closest('button,.nav-btn,[data-action]'))cuteClickSound();},true);
 
-async function initialize(){try{db=await openDB();const records=await readAll('meta');const stored=Object.fromEntries(records.map(v=>[v.key,v.value]));prefs={glow:stored.glow!==false,theme:stored.theme||'cinnamon',budget:Number(stored.budget)||0,sounds:stored.sounds!==false};recipes=await readAll('recipes');groceries=await readAll('groceries');if(!stored.initialized){for(const r of demo)await put('recipes',r);recipes=await readAll('recipes');await put('meta',{key:'initialized',value:true});}await syncExactDemoRecipes();recipes=await readAll('recipes');render();preloadTabScenes();startCloud();if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=14').catch(()=>{});}catch(err){console.error(err);screen.innerHTML=`<div class="empty"><h3>Couldn't open your recipe diary</h3><p>Your browser may be blocking storage. Try opening this site in a normal browser tab rather than a private window.</p></div>`;}}
+async function initialize(){try{db=await openDB();const records=await readAll('meta');const stored=Object.fromEntries(records.map(v=>[v.key,v.value]));prefs={glow:stored.glow!==false,theme:stored.theme||'cinnamon',budget:Number(stored.budget)||0,sounds:stored.sounds!==false};recipes=await readAll('recipes');groceries=await readAll('groceries');if(!stored.initialized){for(const r of demo)await put('recipes',r);recipes=await readAll('recipes');await put('meta',{key:'initialized',value:true});}await syncExactDemoRecipes();recipes=await readAll('recipes');render();startCloud();if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=15').catch(()=>{});}catch(err){console.error(err);screen.innerHTML=`<div class="empty"><h3>Couldn't open your recipe diary</h3><p>Your browser may be blocking storage. Try opening this site in a normal browser tab rather than a private window.</p></div>`;}}
 const sortRec=(arr)=>[...arr].sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
 const byId=r=>recipes.find(x=>x.id===r);
 const niceDate=()=>new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric'}).format(new Date());
