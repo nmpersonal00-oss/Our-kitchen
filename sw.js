@@ -1,5 +1,5 @@
 /* Little Kitchen V8: same-origin app and artwork offline cache. */
-const CACHE = 'little-kitchen-v11-correct-root-assets';
+const CACHE = 'little-kitchen-v12-smooth-scene-transitions';
 const SHELL = ['./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE)
