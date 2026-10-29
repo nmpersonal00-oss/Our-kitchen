@@ -349,23 +349,3 @@ html,body {background:#482719!important}
  .nav-btn{font-size:10px!important}
 }
 @media(prefers-reduced-motion:reduce){.tab-scene{transition:none!important}}
-
-
-/* V12: keep the prior CLEANED artwork visible while the next tab image decodes. */
-.tab-scene img.scene-image,
-.tab-scene img#tab-scene-img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center center!important;filter:none!important}
-.tab-scene img.scene-entering{opacity:0!important;transition:opacity 340ms ease-in-out!important;will-change:opacity}
-.tab-scene img.scene-entering.scene-revealed{opacity:1!important}
-.tab-scene img.scene-visible{opacity:1!important;transition:none!important}
-@media(max-width:719px){
- /* Only reserve what is required for the five-button dock + iOS gesture area. */
- .bottom-nav{bottom:calc(3px + env(safe-area-inset-bottom,0px))!important}
- .screen{bottom:calc(75px + env(safe-area-inset-bottom,0px))!important}
- .app-shell.settings-active .screen{bottom:calc(3px + env(safe-area-inset-bottom,0px))!important}
-}
-@media(max-width:719px) and (display-mode:standalone){
- .app-shell{position:fixed!important;inset:0!important;height:auto!important;min-height:0!important}
-}
-@media(prefers-reduced-motion:reduce){
- .tab-scene img.scene-entering{transition:none!important}
-}
