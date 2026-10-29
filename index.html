@@ -385,39 +385,6 @@ html,body {background:#482719!important}
  .tab-scene img.scene-entering{transition:none!important}
 }
 
-
-/* V13: iOS Home Screen PWA edge-to-edge fix.
-   A fixed, inset:0 shell can stop at the shorter visual viewport and expose the
-   plain html/body background below the illustrated scene on iPhone.
-   Use the same relative 100dvh shell sizing as the working standalone app;
-   keep the navigation's existing safe-area offset so it clears the Home indicator. */
-@media (max-width:719px) {
-  html.ios-standalone .app-shell {
-    position:relative!important;
-    top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;
-    inset:auto!important;
-    height:100dvh!important;
-    min-height:0!important;
-    max-height:none!important;
-    width:100%!important;
-    margin:0!important;
-    border-radius:0!important;
-  }
-}
-@media (max-width:719px) and (display-mode:standalone) {
-  .app-shell {
-    position:relative!important;
-    top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;
-    inset:auto!important;
-    height:100dvh!important;
-    min-height:0!important;
-    max-height:none!important;
-    width:100%!important;
-    margin:0!important;
-    border-radius:0!important;
-  }
-}
-
 </style>
   <title>The Little Kitchen · Groceries & Recipes</title>
 </head>
@@ -686,7 +653,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)requestSyn
 setInterval(()=>{if(cloudUser)syncCloud();},25000);
 document.addEventListener('click',e=>{if(e.target.closest('button,.nav-btn,[data-action]'))cuteClickSound();},true);
 
-async function initialize(){try{db=await openDB();const records=await readAll('meta');const stored=Object.fromEntries(records.map(v=>[v.key,v.value]));prefs={glow:stored.glow!==false,theme:stored.theme||'cinnamon',budget:Number(stored.budget)||0,sounds:stored.sounds!==false};recipes=await readAll('recipes');groceries=await readAll('groceries');if(!stored.initialized){for(const r of demo)await put('recipes',r);recipes=await readAll('recipes');await put('meta',{key:'initialized',value:true});}await syncExactDemoRecipes();recipes=await readAll('recipes');render();preloadTabScenes();startCloud();if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=13').catch(()=>{});}catch(err){console.error(err);screen.innerHTML=`<div class="empty"><h3>Couldn't open your recipe diary</h3><p>Your browser may be blocking storage. Try opening this site in a normal browser tab rather than a private window.</p></div>`;}}
+async function initialize(){try{db=await openDB();const records=await readAll('meta');const stored=Object.fromEntries(records.map(v=>[v.key,v.value]));prefs={glow:stored.glow!==false,theme:stored.theme||'cinnamon',budget:Number(stored.budget)||0,sounds:stored.sounds!==false};recipes=await readAll('recipes');groceries=await readAll('groceries');if(!stored.initialized){for(const r of demo)await put('recipes',r);recipes=await readAll('recipes');await put('meta',{key:'initialized',value:true});}await syncExactDemoRecipes();recipes=await readAll('recipes');render();preloadTabScenes();startCloud();if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=14').catch(()=>{});}catch(err){console.error(err);screen.innerHTML=`<div class="empty"><h3>Couldn't open your recipe diary</h3><p>Your browser may be blocking storage. Try opening this site in a normal browser tab rather than a private window.</p></div>`;}}
 const sortRec=(arr)=>[...arr].sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
 const byId=r=>recipes.find(x=>x.id===r);
 const niceDate=()=>new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric'}).format(new Date());
