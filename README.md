@@ -1,17 +1,24 @@
-# The Little Kitchen — V4 (Simple Grocery Checklist)
+# The Little Kitchen — V5 · Bunny Stories
 
-A fully functional, mobile-first illustrated recipe diary with a streamlined groceries tab.
+This version fixes iPhone top-safe-area overlap, removes browser-native validation bubbles from Quick Add, and adds **five different detailed bunny artwork scenes**. All grocery, recipe, image upload, editing, step-photo and backup functions remain available.
 
-## What changed
-- Grocery page now has **one Add item field and button**, followed by **one large high-contrast checklist**.
-- Tap any square checkbox to mark an item bought (or uncheck it). Purchased items remain on the list.
-- Tap the item name or pencil to change the name, quantity, unit, or notes, or delete the item.
-- Removed the grocery search, store/aisle selectors, sorting, chips, extra add buttons, cost display, and grouped sections from the groceries screen.
-- Recipe ingredient import remains available inside each recipe's details page.
-- Preserved all V3 illustrated backgrounds, icons, recipes, step photos, and settings.
-- Existing grocery and recipe data remain in the same IndexedDB stores; no reset/migration.
+## Quick add
+Type an item and tap **Add item** to save immediately. Pressing Add item while the field is blank opens the item editor instead of showing “Fill out this field.” The app only shows the iPhone keyboard when you tap an actual text field; the keyboard does not reopen after each saved item.
 
-## Install / publish
-Publish the **entire contents of this folder** to the same GitHub Pages location, including `index.html`, `sw.js`, `manifest.webmanifest`, and `assets/`. `index.html` contains the full CSS, JavaScript, and embedded illustration assets, and can be previewed on its own. Reload the published site (or close and reopen the installed app) to pick up the changed service worker.
+## Artwork
+- Groceries: bunny holding paper bags of produce.
+- Recipes: bunny reading a recipe book surrounded by books.
+- Food: bunny preparing vegetables on a cutting board.
+- Drinks: bunny holding a cozy marshmallow-topped cocoa mug.
+- Desserts: bunny placing a strawberry cake on the table.
 
-**Back up first:** From Little Kitchen, tap the upper-left book icon → Settings → Export. Data is local to this browser and is not automatically shared across devices. Do not clear website storage when updating.
+Artwork is original SVG vector illustration in `assets/bunny-*.svg` and **embedded within `index.html`**, so no separate art files are required for the web page to display correctly.
+
+## Publishing to your existing site
+1. In the current app, go to **Settings → Export** to back up your saved recipes, step photos and groceries.
+2. Publish all extracted files together to the same site directory, replacing the previous files. The standalone `index.html` includes everything needed for the illustration and functional UI.
+3. Reopen the site. If an older page persists, close and reopen the installed Home Screen app or clear the website cache. This build updates the service-worker cache version.
+
+Data remains saved in this browser's IndexedDB at the same URL / origin; the update does not clear it. There is no automatic multi-device sync.
+
+The screenshot and artwork scenes are authored illustrations, not a promise of externally AI-generated raster images.

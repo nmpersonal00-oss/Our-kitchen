@@ -138,3 +138,39 @@ body.ambient-off .fireflies,body.ambient-off .grain{display:none}body.ambient-of
 .grocery-edit-sheet .sheet-actions{justify-content:space-between}
 .grocery-edit-sheet .form-input{background:#38251fee;color:#fff4e8}
 @media(max-width:360px){.grocery-head-simple .grocery-illustration{inset:-35px -43px -25px 36%}.grocery-quick-simple button{min-width:99px;padding:0 10px}.grocery-simple-item{gap:8px;padding:11px 9px}.grocery-simple-item .grocery-item-title{font-size:15px}.grocery-simple-quantity{max-width:77px;font-size:11px}}
+  
+/* V5 — iPhone safe-area fixes, easy add and tab-specific illustrated bunny worlds. */
+:root{--top-inset:env(safe-area-inset-top, 0px);--bottom-inset:env(safe-area-inset-bottom, 0px)}
+.tab-scene{position:absolute;z-index:1;inset:0;overflow:hidden;pointer-events:none;opacity:.92;transition:opacity .25s ease;background:transparent}
+.tab-scene img{width:100%;height:100%;display:block;object-fit:cover;object-position:center center;pointer-events:none}
+/* Keep the bunny clearly visible while maintaining readable cards. */
+.ambient-veil{background:linear-gradient(180deg,rgba(37,24,25,.81) 0%,rgba(42,25,24,.25) 22%,rgba(41,25,23,.18) 55%,rgba(34,21,20,.55) 92%,rgba(30,20,19,.7) 100%);z-index:0}
+.ambient-art{opacity:.66;z-index:0}
+.grain{opacity:.32;z-index:0}
+.fireflies{z-index:1;opacity:.48}
+.app-header{z-index:5}
+.grocery-head-simple{background:linear-gradient(105deg,#49302af5,#65483cdf 68%,#81564cd4)}
+.grocery-illustration{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20380%20245%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22f%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20stop-color%3D%22%23fff3de%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23dec2a4%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%0A%20%3Cg%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M173%20105q-77-93-49-104%2031-11%2068%2095M208%20105q-5-111%2023-106%2034%2016%208%20108%22%20fill%3D%22url%28%23f%29%22%20stroke%3D%22%23eed8be%22%20stroke-width%3D%227%22%2F%3E%3Cpath%20d%3D%22M154%2085l-25-60%2030%2037M220%2077l11-51-2%2045%22%20fill%3D%22%23e8b4b2%22%2F%3E%0A%20%3Cellipse%20cx%3D%22196%22%20cy%3D%22142%22%20rx%3D%2283%22%20ry%3D%2272%22%20fill%3D%22url%28%23f%29%22%20stroke%3D%22%23e3c5a7%22%20stroke-width%3D%227%22%2F%3E%3Cellipse%20cx%3D%22178%22%20cy%3D%22147%22%20rx%3D%2222%22%20ry%3D%2219%22%20fill%3D%22%23fff7e9%22%2F%3E%3Cellipse%20cx%3D%22218%22%20cy%3D%22147%22%20rx%3D%2222%22%20ry%3D%2219%22%20fill%3D%22%23fff7e9%22%2F%3E%3Cellipse%20cx%3D%22171%22%20cy%3D%22126%22%20rx%3D%225%22%20ry%3D%228%22%20fill%3D%22%236f5049%22%2F%3E%3Cellipse%20cx%3D%22222%22%20cy%3D%22126%22%20rx%3D%225%22%20ry%3D%228%22%20fill%3D%22%236f5049%22%2F%3E%3Ccircle%20cx%3D%22149%22%20cy%3D%22150%22%20r%3D%2211%22%20fill%3D%22%23e9aba7%22%20opacity%3D%22.72%22%2F%3E%3Ccircle%20cx%3D%22243%22%20cy%3D%22150%22%20r%3D%2211%22%20fill%3D%22%23e9aba7%22%20opacity%3D%22.72%22%2F%3E%3Cpath%20d%3D%22M191%20155q7-8%2015%200-7%2013-15%200%22%20fill%3D%22%23b27e79%22%2F%3E%3Cpath%20d%3D%22M198%20169q-7%207-13%200m13%200q5%208%2013%200%22%20fill%3D%22none%22%20stroke%3D%22%23956e68%22%20stroke-width%3D%223%22%2F%3E%0A%20%3Cpath%20d%3D%22M75%20153l6%2085%20100-3%202-92z%22%20fill%3D%22%23ce9c74%22%20stroke%3D%22%23f7d4af%22%20stroke-width%3D%227%22%2F%3E%3Cpath%20d%3D%22M108%20157q-4-40%2020-40%2025%200%2022%2040%22%20fill%3D%22none%22%20stroke%3D%22%23f5dfc1%22%20stroke-width%3D%228%22%2F%3E%3Cpath%20d%3D%22M116%20143q-18-48%201-68%2024%2021%2020%2068%22%20fill%3D%22%238fa87b%22%2F%3E%3Ccircle%20cx%3D%22148%22%20cy%3D%22147%22%20r%3D%2219%22%20fill%3D%22%23cd8071%22%2F%3E%0A%20%3Cpath%20d%3D%22M234%20152l8%2085%2092%201%2010-89z%22%20fill%3D%22%23dfb18a%22%20stroke%3D%22%23ffead0%22%20stroke-width%3D%227%22%2F%3E%3Cpath%20d%3D%22M261%20156q-3-48%2028-46%2029%204%2027%2045%22%20fill%3D%22none%22%20stroke%3D%22%23f9dfba%22%20stroke-width%3D%228%22%2F%3E%3Cpath%20d%3D%22M265%20144l-14-63q24-16%2032%209l14%2054%22%20fill%3D%22%23eec18f%22%20stroke%3D%22%23fff1d2%22%20stroke-width%3D%226%22%2F%3E%3Cpath%20d%3D%22M312%20145q-5-50%2025-60l6%2065%22%20fill%3D%22%238b9d79%22%2F%3E%0A%20%3Cpath%20d%3D%22M136%20194q30-17%2036%207M253%20199q-24-20-31%207%22%20stroke%3D%22url%28%23f%29%22%20stroke-width%3D%2221%22%20fill%3D%22none%22%2F%3E%3C%2Fg%3E%0A%20%3Cpath%20d%3D%22M49%2055h24m-12-12v24M304%2037h22m-11-11v22%22%20stroke%3D%22%23ffe9d1%22%20stroke-width%3D%224%22%20opacity%3D%22.85%22%2F%3E%3C%2Fsvg%3E")!important;background-repeat:no-repeat!important;background-size:cover!important;background-position:center center!important;inset:-19px -5px -7px 36%!important;opacity:1!important;filter:drop-shadow(0 4px 14px #24100e55)}
+.grocery-head:before{background:linear-gradient(90deg,#392824fa 3%,#442e2ae8 42%,transparent 84%)}
+.grocery-quick-simple input{font-size:16px;min-width:0}
+.grocery-quick-simple button{touch-action:manipulation}
+.grocery-simple-item{background:linear-gradient(128deg,#56392ffb,#463028f9)!important;border-color:#f3cdafc8!important;box-shadow:0 4px 14px #1e0e0ea1,inset 0 1px 8px #ffe3c62c!important}
+.grocery-simple-item.is-bought{background:linear-gradient(128deg,#51443df6,#43342ef6)!important;opacity:1!important}
+/* On a notched iPhone the header grows with the safe inset; the screen must too. */
+@media(max-width:719px){
+ html,body{height:100%;overflow:hidden}
+ .app-shell{min-height:0;height:100vh;height:100dvh;max-height:100dvh;width:100%;border-radius:0}
+ .app-header{height:calc(88px + var(--top-inset));min-height:calc(88px + var(--top-inset));padding:calc(13px + var(--top-inset)) 17px 12px;align-items:center}
+ .screen{top:calc(90px + var(--top-inset));bottom:calc(88px + var(--bottom-inset));padding-top:13px;padding-bottom:40px;scroll-padding-top:14px}
+ .bottom-nav{bottom:calc(8px + var(--bottom-inset))}
+ .tab-scene img{object-position:center bottom}
+}
+@media(max-width:370px){.app-header{height:calc(82px + var(--top-inset));min-height:calc(82px + var(--top-inset))}.screen{top:calc(84px + var(--top-inset))}.brand-label .brand-name{font-size:23px}}
+@media(prefers-reduced-motion:reduce){.tab-scene{transition:none}}
+
+  
+/* A tiny illustration above each recipe grid makes the tab's action unmistakable. */
+.recipe-list-heading{position:relative;min-height:94px;padding-right:118px;isolation:isolate}
+.recipe-list-heading .page-title{position:relative;z-index:1;white-space:nowrap}
+.list-bunny-mini{position:absolute;right:-7px;top:-9px;width:130px;height:123px;object-fit:contain;object-position:center center;pointer-events:none;filter:drop-shadow(0 4px 8px #48312c75)}
+@media(max-width:360px){.recipe-list-heading{padding-right:97px}.list-bunny-mini{width:110px;height:118px}.recipe-list-heading .page-title{font-size:33px}}
