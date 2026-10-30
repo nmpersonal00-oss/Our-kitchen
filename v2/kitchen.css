@@ -44,3 +44,8 @@ html.lk-installed-phone .app{
 /* Approved glowing kawaii bunny sticker replaces only the Settings shortcut artwork. */
 .brand-icon{overflow:visible}
 .brand-icon img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 5px rgba(255,212,140,.8))}
+
+/* Direct WebP stickers: iPhone-compatible image assets, not embedded WebP-in-SVG. */
+.brand-icon{width:64px;height:64px;flex:0 0 64px;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
+.brand-icon img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 6px #ffdb8aaa)}
+.grocery-hero .grocery-bunny{object-fit:contain;object-position:center bottom;filter:drop-shadow(0 0 6px #ffc47688)}
