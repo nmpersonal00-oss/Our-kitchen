@@ -1,13 +1,13 @@
 {
-  "name": "The Little Kitchen \u2014 Kawaii Cottage",
+  "name": "The Little Kitchen",
   "short_name": "Little Kitchen",
-  "description": "A cozy recipe diary with photos for every cooking step.",
+  "description": "Our cozy shared recipes, cooking photos and grocery lists.",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#3b2725",
-  "theme_color": "#65433b",
+  "background_color": "#5d3327",
+  "theme_color": "#5d3327",
   "icons": [
     {
       "src": "./icon-192.png",
