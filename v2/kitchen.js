@@ -24,7 +24,7 @@ const SCENES={grocery:'../reference-grocery.png',recipes:'../reference-recipes.p
 const CATS={food:'Food',drink:'Drinks',dessert:'Desserts'};
 const DB_NAME='little-kitchen-recipes-v1',DB_VERSION=3;
 const CLOUD_URL='https://pptbmupnpxigwfqkdpzt.supabase.co',CLOUD_KEY='sb_publishable_HBQoTJb2-tXAaOHifY9x4A_SXMDZLgr',BUCKET='lk-private-photos';
-let db=null, recipes=[],groceries=[],tab='grocery',filter='all',search='',grocerySearch='',selected=null,editDraft=null,cloud=null,cloudUser=null,cloudStatus='Not connected',syncing=false,cloudReady=false,syncTimer=null,prefs={sounds:true},toastTimer=null;
+let db=null, recipes=[],groceries=[],tab='grocery',filter='all',search='',grocerySearch='',selected=null,editDraft=null,cloud=null,cloudUser=null,cloudStatus='Not connected',syncing=false,cloudReady=false,syncTimer=null,syncAgain=false,cloudChannel=null,photoPending=null,prefs={sounds:true},toastTimer=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>window.crypto?.randomUUID?.()||'lk-'+Date.now()+'-'+Math.random().toString(36).slice(2);
 const now=()=>new Date().toISOString();
@@ -33,15 +33,41 @@ const dsrc=p=>esc(SRC(p));
 const label=t=>CATS[t]||'Recipes';
 const showToast=msg=>{const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3000)};
 const readBlob=file=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.readAsDataURL(file)});
-async function imageData(file){if(!file)return'';if(!file.type.startsWith('image/'))throw Error('Choose an image file');const raw=await readBlob(file);return await new Promise(resolve=>{const im=new Image();im.onload=()=>{const canvas=document.createElement('canvas'),ratio=Math.min(1,1100/Math.max(im.width,im.height));canvas.width=Math.max(1,Math.round(im.width*ratio));canvas.height=Math.max(1,Math.round(im.height*ratio));canvas.getContext('2d').drawImage(im,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',.81))};im.onerror=()=>resolve(raw);im.src=raw})}
+async function imageData(file){if(!file)return'';if(!file.type.startsWith('image/'))throw Error('Choose an image file');const raw=await readBlob(file);return await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{const canvas=document.createElement('canvas'),ratio=Math.min(1,1100/Math.max(im.width,im.height));canvas.width=Math.max(1,Math.round(im.width*ratio));canvas.height=Math.max(1,Math.round(im.height*ratio));canvas.getContext('2d').drawImage(im,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',.81))};im.onerror=()=>reject(Error('This photo could not be opened. Try a JPEG, PNG or WebP image.'));im.src=raw})}
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;for(const name of ['recipes','groceries','outbox','meta'])if(!d.objectStoreNames.contains(name))d.createObjectStore(name,{keyPath:name==='meta'?'key':name==='outbox'?'key':'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 function getAll(store){return new Promise((resolve,reject)=>{const q=db.transaction(store,'readonly').objectStore(store).getAll();q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)})}
 function write(store,value){return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readwrite');tx.objectStore(store).put(value);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
 function remove(store,key){return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readwrite');tx.objectStore(store).delete(key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
 const kind=store=>store==='recipes'?'recipe':'grocery';
-async function queue(store,id,deleted=false){const k=kind(store)+':'+id;await write('outbox',{key:k,kind:kind(store),recordId:id,deleted,at:now()});requestSync()}
-async function save(store,record){record.updatedAt=now();await write(store,record);if(cloudReady)await queue(store,record.id);await reload()}
-async function destroy(store,id){await remove(store,id);if(cloudReady)await queue(store,id,true);await reload()}
+// Every local edit and its outgoing cloud task are committed together. This
+// also works when Supabase has not loaded or the phone is offline.
+function changeLocal(store,id,record,deleted=false){
+ const task={key:kind(store)+':'+id,kind:kind(store),recordId:id,deleted,at:now(),ownerId:cloudUser?.id||null};
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction([store,'outbox'],'readwrite');
+  if(deleted)tx.objectStore(store).delete(id);
+  else tx.objectStore(store).put(record);
+  tx.objectStore('outbox').put(task);
+  tx.oncomplete=()=>resolve();
+  tx.onerror=()=>reject(tx.error);
+  tx.onabort=()=>reject(tx.error||Error('Local save was interrupted'));
+ });
+}
+async function queue(store,id,deleted=false){
+ await write('outbox',{key:kind(store)+':'+id,kind:kind(store),recordId:id,deleted,at:now(),ownerId:cloudUser?.id||null});
+ requestSync();
+}
+async function save(store,record){
+ record.updatedAt=now();
+ await changeLocal(store,record.id,record);
+ await reload();
+ requestSync();
+}
+async function destroy(store,id){
+ await changeLocal(store,id,null,true);
+ await reload();
+ requestSync();
+}
 async function reload(){[recipes,groceries]=await Promise.all([getAll('recipes'),getAll('groceries')]);render()}
 const SAMPLE=[
  ['demo-soup','Velvety Pumpkin Soup','food','exact-pumpkin-soup.webp',35,4,['2 tbsp olive oil','1 onion','2 garlic cloves','3 cups pumpkin purée','2 cups vegetable broth','½ cup cream'],['Sauté onion in oil until soft.','Add pumpkin, garlic and warm spices.','Pour in stock and simmer for 15 minutes.','Blend until smooth, add cream, and serve.']],
@@ -70,7 +96,7 @@ function renderGrocery(){
  const pending=groceries.filter(g=>!g.checked),done=groceries.filter(g=>g.checked);
  return `<div class="grocery-hero"><img class="grocery-bunny" src="./groceries-bunny.webp?v=2" alt="" aria-hidden="true" decoding="async"><div class="grocery-hero-copy"><div class="label">✦ MY SHOPPING LIST ✦</div><h1>Groceries</h1><p>${pending.length} to buy &nbsp;·&nbsp; ${done.length} checked off</p></div></div><div class="quick-add"><input id="grocery-search" type="search" autocomplete="off" aria-label="Search grocery items" placeholder="Search groceries…" value="${esc(grocerySearch)}" maxlength="140"><button class="primary" type="button" data-action="add-grocery-detail">＋ Add item</button></div><div class="panel" id="grocery-items">${groceryRows()}</div>${done.length?'<div class="actions"><button class="secondary" type="button" data-action="clear-checked">Clear checked</button></div>':''}`;
 }
-function renderSettings(){return `<div class="hero"><div class="label">✦ PREFERENCES ✦</div><h1>Settings</h1></div><div class="hero-gap" style="height:25px"></div><div class="panel settings-card"><h2>☁ Shared cloud</h2><p id="cloud-state">${esc(cloudStatus)}</p>${cloudUser?`<p>Signed in as ${esc(cloudUser.email||'your account')}</p><button class="primary" data-action="cloud-sync">Sync now</button><button class="secondary" data-action="cloud-signout">Sign out</button>`:`<form id="cloud-login"><input type="email" name="email" autocomplete="email" placeholder="Existing app email" required><input type="password" name="password" autocomplete="current-password" placeholder="Password" required><button class="primary" type="submit">Sign in to shared cloud</button></form>`}<p>Your local recipes remain on this device; cloud sync is optional.</p></div><div class="panel settings-card"><div class="toggle"><div><h2>♫ Sounds</h2><p>Cute tap sounds</p></div><input id="sounds" type="checkbox" ${prefs.sounds?'checked':''} aria-label="Toggle sounds"></div></div><div class="panel settings-card"><h2>↥ Backups</h2><p>Save or restore your recipes, groceries, and photos as a JSON file.</p><button class="primary" data-action="export">Export backup</button><button class="secondary" data-action="import">Import backup</button></div><div class="panel settings-card"><h2>Recipe book</h2><p>${recipes.length} recipes saved · ${groceries.length} grocery items</p><button class="secondary" data-action="tab" data-tab="recipes">View recipes</button></div>`}
+function renderSettings(){return `<div class="hero"><div class="label">✦ PREFERENCES ✦</div><h1>Settings</h1></div><div class="hero-gap" style="height:25px"></div><div class="panel settings-card"><h2>☁ Shared cloud</h2><p id="cloud-state">${esc(cloudStatus)}</p>${cloudUser?`<p>Signed in as ${esc(cloudUser.email||'your account')}</p><button class="primary" data-action="cloud-sync">Sync now</button><button class="secondary" data-action="cloud-signout">Sign out</button>`:`<form id="cloud-login"><input type="email" name="email" autocomplete="email" placeholder="Existing app email" required><input type="password" name="password" autocomplete="current-password" placeholder="Password" required><button class="primary" type="submit">Sign in to shared cloud</button></form>`}<p>Sign in with the same existing account on both phones. Changes sync automatically when online; offline edits are saved until they can sync.</p></div><div class="panel settings-card"><div class="toggle"><div><h2>♫ Sounds</h2><p>Cute tap sounds</p></div><input id="sounds" type="checkbox" ${prefs.sounds?'checked':''} aria-label="Toggle sounds"></div></div><div class="panel settings-card"><h2>↥ Backups</h2><p>Save or restore your recipes, groceries, and photos as a JSON file.</p><button class="primary" data-action="export">Export backup</button><button class="secondary" data-action="import">Import backup</button></div><div class="panel settings-card"><h2>Recipe book</h2><p>${recipes.length} recipes saved · ${groceries.length} grocery items</p><button class="secondary" data-action="tab" data-tab="recipes">View recipes</button></div>`}
 function render(keepScroll=false){const y=content.scrollTop;setScene();content.innerHTML=tab==='grocery'?renderGrocery():tab==='settings'?renderSettings():renderRecipes();if(keepScroll)content.scrollTop=y;else content.scrollTop=0}
 function activate(t){tab=SCENES[t]?t:'recipes';filter='all';search='';grocerySearch='';closeOverlay();render()}
 function showOverlay(html){overlay.innerHTML=`<div class="sheet">${html}</div>`;overlay.hidden=false;$('#add-float').hidden=true}
@@ -86,24 +112,159 @@ function editGrocery(id){const g=groceries.find(x=>x.id===id)||{id:uid(),name:''
 function download(name,text,type){const blob=new Blob([text],{type});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),15000)}
 async function exportBackup(){download('little-kitchen-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'the-little-kitchen',version:3,exportedAt:now(),recipes,groceries,prefs},null,2),'application/json');showToast('Backup exported')}
 async function importBackup(file){if(!file)return;try{if(file.size>90*1024*1024)throw Error('Backup is too large');const v=JSON.parse(await file.text());if(v.app!=='the-little-kitchen'||!Array.isArray(v.recipes))throw Error('Not a Little Kitchen backup');const n=confirm(`Import ${v.recipes.length} recipes and ${(v.groceries||[]).length} groceries? Existing entries with the same IDs will be updated.`);if(!n)return;for(const r of v.recipes){if(!r||typeof r.id!=='string'||typeof r.title!=='string')continue;await saveRaw('recipes',r)}for(const g of v.groceries||[]){if(!g||typeof g.id!=='string'||typeof g.name!=='string')continue;await saveRaw('groceries',g)}await reload();showToast('Backup imported')}catch(e){showToast(e.message||'Import failed')}}
-async function saveRaw(store,value){await write(store,value);if(cloudReady)await queue(store,value.id)}
+async function saveRaw(store,value){value.updatedAt=value.updatedAt||now();await changeLocal(store,value.id,value);requestSync()}
 function exportCsv(){const rows=[['Item','Quantity','Unit','Notes','Purchased'],...groceries.map(g=>[g.name,g.qty,g.unit,g.notes,g.checked?'Yes':'No'])];download('little-kitchen-groceries.csv',rows.map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n'),'text/csv')}
 async function addIngredients(id){const r=recipes.find(x=>x.id===id);if(!r)return;let count=0;for(const x of r.ingredients||[]){const name=String(typeof x==='string'?x:x.name||'').trim();if(!name)continue;await saveRaw('groceries',{id:uid(),name,qty:1,unit:'',checked:false,category:'pantry',source:r.id,createdAt:now(),updatedAt:now()});count++}closeOverlay();activate('grocery');await reload();showToast(count+' ingredients added')}
-function requestSync(){if(!cloudUser||syncing)return;clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncCloud().catch(console.error),900)}
+function requestSync(){
+ if(!cloudUser)return;
+ if(syncing){syncAgain=true;return}
+ clearTimeout(syncTimer);
+ syncTimer=setTimeout(()=>syncCloud().catch(console.error),650);
+}
 function cloudLabel(x){cloudStatus=x;const el=$('#cloud-state');if(el)el.textContent=x}
-async function cloudImageIn(v){if(!v?.startsWith?.('lk-photo:')||!cloud)return v||'';try{const {data,error}=await cloud.storage.from(BUCKET).download(v.slice(9));if(error)throw error;return await readBlob(data)}catch(e){console.warn(e);return ''}}
-async function cloudImageOut(v,id,slot){if(!v?.startsWith?.('data:image/')||!cloudUser)return v||'';const blob=await(await fetch(v)).blob();const path=`${cloudUser.id}/${encodeURIComponent(id)}/${encodeURIComponent(slot)}-${uid()}.jpg`;const {error}=await cloud.storage.from(BUCKET).upload(path,blob,{contentType:'image/jpeg',upsert:false});if(error)throw error;return 'lk-photo:'+path}
-async function cloudExpand(kind,v){const x=structuredClone(v||{});if(kind==='recipe'){x.photo=await cloudImageIn(x.photo);for(const step of x.steps||[])step.photo=await cloudImageIn(step.photo)}return x}
-async function cloudPrepare(kind,r){const x=structuredClone(r);if(kind==='recipe'){x.photo=await cloudImageOut(x.photo,r.id,'cover');for(const st of x.steps||[])st.photo=await cloudImageOut(st.photo,r.id,st.id||'step')}return x}
-async function syncCloud(){if(syncing||!cloud||!cloudUser||!navigator.onLine)return;syncing=true;cloudLabel('Syncing…');try{
- const {data:remote,error}=await cloud.from('lk_entries').select('kind,record_id,payload,deleted,updated_at').eq('user_id',cloudUser.id).limit(10000);if(error)throw error;
- const pending=await getAll('outbox'),pendingKeys=new Set(pending.map(x=>x.key)),remoteKeys=new Set();
- for(const row of remote||[]){const store=row.kind==='recipe'?'recipes':row.kind==='grocery'?'groceries':null;if(!store)continue;const key=row.kind+':'+row.record_id;remoteKeys.add(key);if(pendingKeys.has(key))continue;const local=(store==='recipes'?recipes:groceries).find(x=>x.id===row.record_id);if(row.deleted){if(local)await remove(store,row.record_id);continue}if(!local||String(local.updatedAt||local.createdAt||'')<String(row.payload?.updatedAt||row.updated_at)){const item=await cloudExpand(row.kind,row.payload);if(item.id)await write(store,item)}}
- [recipes,groceries]=await Promise.all([getAll('recipes'),getAll('groceries')]);for(const [store,all] of [['recipes',recipes],['groceries',groceries]])for(const item of all){const key=kind(store)+':'+item.id;if(!remoteKeys.has(key)&&!pendingKeys.has(key))await queue(store,item.id)}
- for(const task of await getAll('outbox')){const store=task.kind==='recipe'?'recipes':task.kind==='grocery'?'groceries':null;if(!store)continue;const record=(store==='recipes'?recipes:groceries).find(x=>x.id===task.recordId);const deleted=task.deleted||!record;const payload=deleted?{}:await cloudPrepare(task.kind,record);const {error:pushError}=await cloud.from('lk_entries').upsert({user_id:cloudUser.id,kind:task.kind,record_id:task.recordId,payload,deleted,updated_at:now()},{onConflict:'user_id,kind,record_id'});if(pushError)throw pushError;const taskNow=(await getAll('outbox')).find(x=>x.key===task.key);if(taskNow?.at===task.at)await remove('outbox',task.key)}
- cloudLabel((await getAll('outbox')).length?'Some changes waiting':'Cloud up to date');await reload()
- }catch(e){console.error('Cloud sync',e);cloudLabel('Cloud sync failed · local data safe')}finally{syncing=false}}
-async function startCloud(){try{if(!window.supabase?.createClient)throw Error('Offline');cloud=window.supabase.createClient(CLOUD_URL,CLOUD_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});cloud.auth.onAuthStateChange((_event,session)=>{cloudUser=session?.user||null;cloudLabel(cloudUser?'Connected · syncing…':'Not connected');if(cloudUser)requestSync();if(tab==='settings')setTimeout(()=>render(true),0)});const {data,error}=await cloud.auth.getSession();if(error)throw error;cloudUser=data.session?.user||null;cloudReady=true;cloudLabel(cloudUser?'Connected':'Not connected');if(cloudUser)requestSync()}catch(e){console.warn('Cloud unavailable:',e);cloudLabel('Offline · local saves still work')}}
+async function cloudImageIn(v){
+ if(!v?.startsWith?.('lk-photo:')||!cloud)return v||'';
+ // A failed download must not silently replace a recipe photo with blank data.
+ const {data,error}=await cloud.storage.from(BUCKET).download(v.slice(9));
+ if(error)throw Error('Could not download a shared photo: '+error.message);
+ return await readBlob(data);
+}
+async function cloudImageOut(v,id,slot){
+ if(!v?.startsWith?.('data:image/')||!cloudUser)return v||'';
+ const blob=await(await fetch(v)).blob();
+ const mime=['image/jpeg','image/png','image/webp'].includes(blob.type)?blob.type:'image/jpeg';
+ const ext=mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg';
+ const path=`${cloudUser.id}/${encodeURIComponent(id)}/${encodeURIComponent(slot)}-${uid()}.${ext}`;
+ const {error}=await cloud.storage.from(BUCKET).upload(path,blob,{contentType:mime,upsert:false});
+ if(error)throw Error('Photo upload failed: '+error.message);
+ return 'lk-photo:'+path;
+}
+async function cloudExpand(kind,v){
+ const x=structuredClone(v||{});
+ if(kind==='recipe'){
+  x.photo=await cloudImageIn(x.photo);
+  for(const step of x.steps||[])step.photo=await cloudImageIn(step.photo);
+ }
+ return x;
+}
+async function cloudPrepare(kind,r){
+ const x=structuredClone(r);
+ if(kind==='recipe'){
+  x.photo=await cloudImageOut(x.photo,r.id,'cover');
+  for(const st of x.steps||[])st.photo=await cloudImageOut(st.photo,r.id,st.id||'step');
+ }
+ return x;
+}
+async function syncCloud(){
+ if(syncing){syncAgain=true;return}
+ if(!cloud||!cloudUser)return;
+ if(!navigator.onLine){cloudLabel('Offline · changes saved here, waiting to sync');return}
+ syncing=true;
+ const accountId=cloudUser.id;
+ cloudLabel('Syncing…');
+ try{
+  const {data:remote,error}=await cloud.from('lk_entries')
+   .select('kind,record_id,payload,deleted,updated_at')
+   .eq('user_id',accountId).limit(10000);
+  if(error)throw error;
+  if((remote||[]).length===10000)throw Error('Too many cloud records; sync is incomplete');
+  const outstanding=await getAll('outbox');
+  const pendingKeys=new Set(outstanding.filter(t=>!t.ownerId||t.ownerId===accountId).map(t=>t.key));
+  const remoteKeys=new Set();
+  const snapshots={recipes:await getAll('recipes'),groceries:await getAll('groceries')};
+  for(const row of remote||[]){
+   const store=row.kind==='recipe'?'recipes':row.kind==='grocery'?'groceries':null;
+   if(!store)continue;
+   const key=row.kind+':'+row.record_id;
+   remoteKeys.add(key);
+   if(pendingKeys.has(key))continue; // Never replace an edit awaiting upload.
+   const local=snapshots[store].find(x=>x.id===row.record_id);
+   if(row.deleted){
+    if(local && !(await getAll('outbox')).some(t=>t.key===key))await remove(store,row.record_id);
+    continue;
+   }
+   if(!row.payload?.id)continue;
+   // A newly installed phone seeds demo recipes with fresh local timestamps.
+   // Compare against the cloud payload, not the phone's seed creation time.
+   if(local && String(local.updatedAt||'')===String(row.payload.updatedAt||''))continue;
+   // Preserve edits made by older offline app versions before they used an outbox.
+   if(local && !String(local.id).startsWith('demo-') &&
+      Date.parse(local.updatedAt||0)>Date.parse(row.payload.updatedAt||row.updated_at||0)){
+    await queue(store,local.id);pendingKeys.add(key);continue;
+   }
+   const item=await cloudExpand(row.kind,row.payload);
+   if(!(await getAll('outbox')).some(t=>t.key===key))await write(store,item);
+  }
+  const current={recipes:await getAll('recipes'),groceries:await getAll('groceries')};
+  for(const store of ['recipes','groceries'])for(const item of current[store]){
+   const key=kind(store)+':'+item.id;
+   if(!remoteKeys.has(key)&&!pendingKeys.has(key)){
+    await queue(store,item.id);pendingKeys.add(key);
+   }
+  }
+  for(const task of await getAll('outbox')){
+   if(task.ownerId && task.ownerId!==accountId)continue;
+   if(cloudUser?.id!==accountId)throw Error('Shared account changed during sync');
+   const store=task.kind==='recipe'?'recipes':task.kind==='grocery'?'groceries':null;
+   if(!store)continue;
+   const record=(await getAll(store)).find(x=>x.id===task.recordId);
+   const deleted=task.deleted||!record;
+   const payload=deleted?{}:await cloudPrepare(task.kind,record);
+   const {data:saved,error:pushError}=await cloud.from('lk_entries')
+    .upsert({user_id:accountId,kind:task.kind,record_id:task.recordId,
+      payload,deleted,updated_at:now()},{onConflict:'user_id,kind,record_id'})
+    .select('record_id').single();
+   if(pushError)throw pushError;
+   if(saved?.record_id!==task.recordId)throw Error('Cloud did not confirm the save');
+   const taskNow=(await getAll('outbox')).find(x=>x.key===task.key);
+   if(taskNow?.at===task.at)await remove('outbox',task.key);
+  }
+  cloudLabel((await getAll('outbox')).length?'Some changes still waiting':'Cloud up to date');
+  await reload();
+ }catch(e){
+  console.error('Cloud sync',e);
+  cloudLabel('Cloud sync failed · '+String(e?.message||'please try again').slice(0,110)+' · local changes saved');
+ }finally{
+  syncing=false;
+  if(syncAgain){syncAgain=false;requestSync()}
+ }
+}
+function watchCloud(){
+ if(cloudChannel){cloud.removeChannel(cloudChannel);cloudChannel=null}
+ if(!cloudUser)return;
+ cloudChannel=cloud.channel('little-kitchen-'+cloudUser.id)
+  .on('postgres_changes',{
+   event:'*',schema:'public',table:'lk_entries',filter:'user_id=eq.'+cloudUser.id
+  },()=>requestSync())
+  .subscribe();
+}
+async function startCloud(){
+ try{
+  if(!window.supabase?.createClient)throw Error('Cloud library did not load');
+  cloud=window.supabase.createClient(CLOUD_URL,CLOUD_KEY,{
+   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+  });
+  cloud.auth.onAuthStateChange((_event,session)=>{
+   const next=session?.user||null,changed=cloudUser?.id!==next?.id;
+   cloudUser=next;
+   if(changed)watchCloud();
+   cloudLabel(cloudUser?'Connected · checking changes…':'Sign in on both devices to share');
+   if(cloudUser)requestSync();
+   if(tab==='settings')setTimeout(()=>render(true),0);
+  });
+  const {data,error}=await cloud.auth.getSession();
+  if(error)throw error;
+  const previousId=cloudUser?.id;
+  cloudUser=data.session?.user||null;
+  cloudReady=true;
+  if(previousId!==cloudUser?.id)watchCloud();
+  cloudLabel(cloudUser?'Connected · checking changes…':'Sign in on both devices to share');
+  if(cloudUser)requestSync();
+ }catch(e){
+  console.warn('Cloud unavailable:',e);
+  cloudLabel('Cloud unavailable · local saves still work');
+ }
+}
 function playSound(){if(!prefs.sounds)return;try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator(),vol=ctx.createGain();osc.type='sine';osc.frequency.value=740;vol.gain.setValueAtTime(.035,ctx.currentTime);vol.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.1);osc.connect(vol);vol.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.11);osc.onended=()=>ctx.close()}catch{}}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const act=b.dataset.action,id=b.dataset.id; if(act!=='check-grocery')playSound();try{
  switch(act){case'tab':activate(b.dataset.tab);break;case'close':closeOverlay();break;case'close-settings':activate('grocery');break;case'new-recipe':editRecipe();break;case'open-recipe':openRecipe(id);break;case'edit-recipe':editRecipe(id);break;case'favorite':{const r=recipes.find(x=>x.id===id);if(r)await save('recipes',{...r,favorite:!r.favorite});break}case'filter':filter=b.dataset.filter;render(true);break;
@@ -114,8 +275,19 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-acti
  case'cloud-sync':await syncCloud();break;case'cloud-signout':if(cloud){await syncCloud();await cloud.auth.signOut();cloudUser=null;cloudLabel('Not connected');render(true)}break;
  }}catch(err){console.error(err);showToast(err.message||'Something went wrong')}});
 document.addEventListener('input',e=>{if(e.target.id==='search-recipes'){search=e.target.value;renderCards()}else if(e.target.id==='grocery-search'){grocerySearch=e.target.value;const list=$('#grocery-items');if(list)list.innerHTML=groceryRows()}});
-document.addEventListener('change',async e=>{try{if(e.target.dataset.action==='check-grocery'){const g=groceries.find(g=>g.id===e.target.dataset.id);if(g)await save('groceries',{...g,checked:e.target.checked})}if(e.target.id==='sounds'){prefs.sounds=e.target.checked;await write('meta',{key:'sounds',value:prefs.sounds});showToast('Sound preference saved')}if(e.target.dataset.stepFile!==undefined&&e.target.files?.[0]){readEditor();editDraft.steps[Number(e.target.dataset.stepFile)].photo=await imageData(e.target.files[0]);renderEditor()}}catch(err){console.error(err);showToast(err.message)}});
-document.addEventListener('submit',async e=>{const f=e.target;if(!['recipe-form','grocery-form','cloud-login'].includes(f.id))return;e.preventDefault();try{if(f.id==='recipe-form'){readEditor();if(!editDraft.title.trim())throw Error('Enter a recipe name');const cover=f.querySelector('[name="cover-photo"]');if(cover.files?.[0])editDraft.photo=await imageData(cover.files[0]);editDraft.steps=editDraft.steps.filter(st=>st.text.trim());await save('recipes',editDraft);closeOverlay();showToast('Recipe saved')}if(f.id==='grocery-form'){const data=new FormData(f);const n=String(data.get('name')||'').trim();if(!n)throw Error('Enter item name');const original=groceries.find(x=>x.id===selected)||{id:uid(),checked:false,category:'pantry',createdAt:now()};await save('groceries',{...original,name:n,qty:Math.max(.01,Number(data.get('qty'))||1),unit:String(data.get('unit')||''),notes:String(data.get('notes')||''),priority:data.has('priority')});closeOverlay();showToast('Item saved')}if(f.id==='cloud-login'){if(!cloud)throw Error('Cloud unavailable');cloudLabel('Signing in…');const data=new FormData(f);const res=await cloud.auth.signInWithPassword({email:String(data.get('email')||''),password:String(data.get('password')||'')});if(res.error)throw res.error;cloudUser=res.data.user;cloudReady=true;requestSync();render(true)}}catch(err){console.error(err);showToast(err.message||'Could not save')}});
+document.addEventListener('change',async e=>{try{if(e.target.dataset.action==='check-grocery'){const g=groceries.find(g=>g.id===e.target.dataset.id);if(g)await save('groceries',{...g,checked:e.target.checked})}if(e.target.id==='sounds'){prefs.sounds=e.target.checked;await write('meta',{key:'sounds',value:prefs.sounds});showToast('Sound preference saved')}if(e.target.name==='cover-photo'&&e.target.files?.[0]){
+ readEditor();const draft=editDraft;
+ photoPending=imageData(e.target.files[0]);
+ try{const photo=await photoPending;if(editDraft===draft){draft.photo=photo;renderEditor()}}
+ finally{photoPending=null}
+ }
+ if(e.target.dataset.stepFile!==undefined&&e.target.files?.[0]){
+ readEditor();const draft=editDraft,index=Number(e.target.dataset.stepFile);
+ photoPending=imageData(e.target.files[0]);
+ try{const photo=await photoPending;if(editDraft===draft){draft.steps[index].photo=photo;renderEditor()}}
+ finally{photoPending=null}
+ }}catch(err){console.error(err);showToast(err.message)}});
+document.addEventListener('submit',async e=>{const f=e.target;if(!['recipe-form','grocery-form','cloud-login'].includes(f.id))return;e.preventDefault();try{if(f.id==='recipe-form'){if(photoPending)await photoPending;readEditor();if(!editDraft.title.trim())throw Error('Enter a recipe name');const cover=f.querySelector('[name="cover-photo"]');if(cover.files?.[0])editDraft.photo=await imageData(cover.files[0]);editDraft.steps=editDraft.steps.filter(st=>st.text.trim());await save('recipes',editDraft);closeOverlay();showToast('Recipe saved')}if(f.id==='grocery-form'){const data=new FormData(f);const n=String(data.get('name')||'').trim();if(!n)throw Error('Enter item name');const original=groceries.find(x=>x.id===selected)||{id:uid(),checked:false,category:'pantry',createdAt:now()};await save('groceries',{...original,name:n,qty:Math.max(.01,Number(data.get('qty'))||1),unit:String(data.get('unit')||''),notes:String(data.get('notes')||''),priority:data.has('priority')});closeOverlay();showToast('Item saved')}if(f.id==='cloud-login'){if(!cloud)throw Error('Cloud unavailable');cloudLabel('Signing in…');const data=new FormData(f);const res=await cloud.auth.signInWithPassword({email:String(data.get('email')||''),password:String(data.get('password')||'')});if(res.error)throw res.error;cloudUser=res.data.user;cloudReady=true;requestSync();render(true)}}catch(err){console.error(err);showToast(err.message||'Could not save')}});
 $('#import-file').addEventListener('change',e=>{const f=e.target.files?.[0];e.target.value='';importBackup(f)});
 window.addEventListener('online',requestSync);window.addEventListener('focus',requestSync);document.addEventListener('visibilitychange',()=>{if(!document.hidden)requestSync()});setInterval(()=>{if(cloudUser)requestSync()},30000);
 async function init(){try{db=await openDB();await seedOnce();const meta=await getAll('meta');const settings=meta.find(x=>x.key==='sounds');if(settings)prefs.sounds=settings.value!==false;[recipes,groceries]=await Promise.all([getAll('recipes'),getAll('groceries')]);render();const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js';script.onload=()=>startCloud();script.onerror=()=>cloudLabel('Offline · local saves still work');document.head.appendChild(script)}catch(err){console.error(err);content.innerHTML='<div class="panel">Could not open saved recipes. Please use a regular browser window.</div>'}}
