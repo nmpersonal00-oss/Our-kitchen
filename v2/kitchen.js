@@ -250,7 +250,7 @@ async function startCloud(){
    if(changed)watchCloud();
    cloudLabel(cloudUser?'Connected · checking changes…':'Sign in on both devices to share');
    if(cloudUser)requestSync();
-   if(tab==='settings')setTimeout(()=>render(true),0);
+   if(changed&&tab==='settings')setTimeout(()=>render(true),0);
   });
   const {data,error}=await cloud.auth.getSession();
   if(error)throw error;
