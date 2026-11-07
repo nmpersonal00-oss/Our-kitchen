@@ -188,8 +188,14 @@ function renderGrocery(){
 function renderSettings(){return `<div class="hero"><div class="label">✦ PREFERENCES ✦</div><h1>Settings</h1></div><div class="hero-gap" style="height:25px"></div><div class="panel settings-card"><h2>☁ Shared cloud</h2><p id="cloud-state">${esc(cloudStatus)}</p>${cloudUser?`<p>Signed in as ${esc(cloudUser.email||'your account')}</p><button class="primary" data-action="cloud-sync">Sync now</button><button class="secondary" data-action="cloud-signout">Sign out</button>`:`<form id="cloud-login"><input type="email" name="email" autocomplete="email" placeholder="Existing app email" required><input type="password" name="password" autocomplete="current-password" placeholder="Password" required><button class="primary" type="submit">Sign in to shared cloud</button></form>`}<p>Sign in with the same existing account on both phones. Changes sync automatically when online; offline edits are saved until they can sync.</p></div><div class="panel settings-card"><div class="toggle"><div><h2>♫ Sounds</h2><p>Cute tap sounds</p></div><input id="sounds" type="checkbox" ${prefs.sounds?'checked':''} aria-label="Toggle sounds"></div></div><div class="panel settings-card"><h2>↥ Backups</h2><p>Save or restore your recipes, groceries, and photos as a JSON file.</p><button class="primary" data-action="export">Export backup</button><button class="secondary" data-action="import">Import backup</button></div><div class="panel settings-card"><h2>Recipe book</h2><p>${recipes.length} recipes saved · ${groceries.length} grocery items</p><button class="secondary" data-action="tab" data-tab="recipes">View recipes</button></div>`}
 function render(keepScroll=false){const y=content.scrollTop;setScene();content.innerHTML=tab==='grocery'?renderGrocery():tab==='settings'?renderSettings():renderRecipes();if(keepScroll)content.scrollTop=y;else content.scrollTop=0}
 function activate(t){const next=SCENES[t]?t:'recipes',changed=next!==tab;tab=next;filter='all';search='';grocerySearch='';closeOverlay();render();if(changed){content.classList.remove('tab-reveal');void content.offsetWidth;content.classList.add('tab-reveal')}}
-function showOverlay(html){overlay.innerHTML=`<div class="sheet">${html}</div>`;overlay.hidden=false;$('#add-float').hidden=true}
-function closeOverlay(){overlay.hidden=true;overlay.innerHTML='';editDraft=null;$('#add-float').hidden=false}
+function showOverlay(html,mode=''){
+ const isGroceryDetail=mode==='grocery-detail';
+ overlay.classList.toggle('grocery-detail-overlay',isGroceryDetail);
+ overlay.innerHTML=`<div class="sheet${isGroceryDetail?' grocery-detail-sheet':''}"${isGroceryDetail?' role="dialog" aria-modal="true" aria-labelledby="grocery-detail-title"':''}>${html}</div>`;
+ overlay.hidden=false;
+ $('#add-float').hidden=true;
+}
+function closeOverlay(){overlay.hidden=true;overlay.innerHTML='';overlay.classList.remove('grocery-detail-overlay');editDraft=null;$('#add-float').hidden=false}
 function sheetHead(title){return `<div class="sheet-head"><h2>${esc(title)}</h2><button class="close" data-action="close" aria-label="Close">×</button></div>`}
 function openRecipe(id){const r=recipes.find(x=>x.id===id);if(!r)return;selected=id;showOverlay(`${sheetHead(r.title)}<img class="detail-photo" src="${dsrc(r.photo)||'../reference-recipes.png'}" alt=""><p>${esc(label(r.category))} · ${Number(r.minutes)||0} min · ${Number(r.servings)||1} servings</p><p>${esc(r.description||'')}</p><div class="actions"><button class="primary" data-action="edit-recipe" data-id="${esc(id)}">✎ Edit recipe</button><button class="secondary" data-action="recipe-to-grocery" data-id="${esc(id)}">+ Shopping list</button></div><h2>Ingredients</h2><ul class="detail-list">${(r.ingredients||[]).map(x=>`<li>${esc(typeof x==='string'?x:x.name||'')}</li>`).join('')}</ul><h2>Steps</h2>${(r.steps||[]).map((st,i)=>`<section class="detail-step"><h3>Step ${i+1}</h3><p>${esc(st.text||'')}</p>${st.photo?`<img src="${dsrc(st.photo)}" alt="Photo for step ${i+1}">`:''}${st.note?`<p class="hint">${esc(st.note)}</p>`:''}</section>`).join('')}<p>${esc(r.notes||'')}</p><div class="actions"><button class="secondary" data-action="delete-recipe" data-id="${esc(id)}">Delete recipe</button></div>`)}
 function newDraft(category){return {id:uid(),title:'',category:category||'food',description:'',difficulty:'Easy',minutes:30,servings:2,photo:'',favorite:false,ingredients:[],steps:[{id:uid(),text:'',note:'',photo:''}],createdAt:now()}}
@@ -201,12 +207,31 @@ function openGrocery(id){
  const g=groceries.find(x=>x.id===id);
  if(!g)return;
  selected=id;
- showOverlay(`${sheetHead(g.name)}
-  ${g.photo?`<img class="grocery-detail-photo" src="${dsrc(g.photo)}" alt="Product photo for ${esc(g.name)}">`:'<div class="grocery-photo-placeholder">No product photo added yet</div>'}
-  <div class="detail-list"><p><strong>Quantity:</strong> ${esc(g.qty||1)} ${esc(g.unit||'')}</p>
-  ${g.notes?`<p><strong>Notes:</strong> ${esc(g.notes)}</p>`:''}
-  <p><strong>Status:</strong> ${isGroceryChecked(g)?'Purchased':'Need to buy'}</p></div>
-  <div class="actions"><button class="primary" type="button" data-action="edit-grocery" data-id="${esc(g.id)}">Edit item / photo</button><button class="secondary" type="button" data-action="close">Close</button></div>`);
+ showOverlay(`<div class="grocery-detail-heading">
+  <button class="grocery-detail-close" type="button" data-action="close" aria-label="Close grocery details">×</button>
+  <h2 id="grocery-detail-title">${esc(g.name)}</h2>
+ </div>
+ <div class="grocery-detail-image">
+  ${g.photo?`<img class="grocery-detail-photo" src="${dsrc(g.photo)}" alt="Product photo for ${esc(g.name)}">`:'<div class="grocery-detail-photo-empty"><span aria-hidden="true">♡</span><p>Add a photo of the exact product you want to buy</p></div>'}
+ </div>
+ <div class="grocery-detail-facts">
+  <div class="grocery-detail-fact">
+   <span class="grocery-detail-fact-label">Quantity</span>
+   <strong class="grocery-detail-fact-value">${esc(g.qty??1)}${g.unit?' '+esc(g.unit):''}</strong>
+  </div>
+  ${g.notes?`<div class="grocery-detail-fact">
+   <span class="grocery-detail-fact-label">Notes</span>
+   <strong class="grocery-detail-fact-value grocery-detail-notes">${esc(g.notes)}</strong>
+  </div>`:''}
+  <div class="grocery-detail-fact">
+   <span class="grocery-detail-fact-label">Status</span>
+   <strong class="grocery-detail-fact-value">${isGroceryChecked(g)?'Purchased':'Need to buy'}</strong>
+  </div>
+ </div>
+ <div class="actions grocery-detail-actions">
+  <button class="primary" type="button" data-action="edit-grocery" data-id="${esc(g.id)}">Edit item / photo</button>
+  <button class="secondary" type="button" data-action="close">Close</button>
+ </div>`,'grocery-detail');
 }
 function groceryPhotoPreview(){
  const node=$('#grocery-photo-preview');
@@ -406,6 +431,13 @@ async function startCloud(){
  }
 }
 function playSound(){if(!prefs.sounds)return;try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator(),vol=ctx.createGain();osc.type='sine';osc.frequency.value=740;vol.gain.setValueAtTime(.035,ctx.currentTime);vol.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.1);osc.connect(vol);vol.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.11);osc.onended=()=>ctx.close()}catch{}}
+// Grocery detail is a floating card: tapping its dimmed backdrop or Escape closes it.
+overlay.addEventListener('click',e=>{
+ if(e.target===overlay&&overlay.classList.contains('grocery-detail-overlay'))closeOverlay();
+});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&!overlay.hidden&&overlay.classList.contains('grocery-detail-overlay'))closeOverlay();
+});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const act=b.dataset.action,id=b.dataset.id; if(act!=='check-grocery')playSound();try{
  switch(act){case'tab':activate(b.dataset.tab);break;case'close':closeOverlay();break;case'close-settings':activate('grocery');break;case'new-recipe':editRecipe();break;case'open-recipe':openRecipe(id);break;case'edit-recipe':editRecipe(id);break;case'favorite':{const r=recipes.find(x=>x.id===id);if(r)await save('recipes',{...r,favorite:!r.favorite});break}case'filter':filter=b.dataset.filter;render(true);break;
  case'open-grocery':openGrocery(id);break;case'edit-grocery':editGrocery(id);break;case'remove-grocery-photo':groceryPhotoRevision++;groceryPhotoDraft='';groceryPhotoPending=null;groceryPhotoPreview();break;case'add-grocery-detail':editGrocery(null);break;case'delete-grocery':if(confirm('Delete this grocery item?'))await destroy('groceries',id);break;case'uncheck-purchased':{const bought=groceries.filter(isGroceryChecked);for(const g of bought)await changeLocal('groceries',g.id,{...g,checked:false,checkedAt:null,updatedAt:now()});if(bought.length){await reload();requestSync()}break;}
