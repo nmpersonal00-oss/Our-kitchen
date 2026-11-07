@@ -540,3 +540,32 @@ html,body,.app,.app *{touch-action:manipulation}
  object-fit:contain;
  object-position:center;
 }
+
+
+.recipe-card .thumb-wrap .recipe-no-photo{
+ display:flex;
+ height:100%;width:100%;
+ align-items:center;justify-content:center;
+ color:#ffe4bd;
+ font-size:46px;
+ font-family:Georgia,serif;
+}
+.overlay.card-popup-overlay .recipe-detail-sheet .recipe-detail-no-photo{
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
+ min-height:145px;
+ margin:0 0 16px;
+ border:1px dashed rgba(255,222,185,.65);
+ border-radius:18px;
+ background:rgba(68,35,25,.56);
+ color:#ffe6cc;
+ font-family:Georgia,serif;
+ font-size:42px;
+}
+.overlay.card-popup-overlay .recipe-detail-sheet .recipe-detail-no-photo small{
+ margin:6px 0;
+ font-family:'Trebuchet MS',system-ui,sans-serif;
+ font-size:15px;
+}
