@@ -72,3 +72,28 @@ html,body,.app,.app *{touch-action:manipulation}
  .scene-fade{transition:none;will-change:auto}
  .content.tab-reveal{animation:none}
 }
+
+
+/* Grocery product photos: reusable shopping reference, including offline. */
+.grocery-open{
+ appearance:none;-webkit-appearance:none;border:0;background:transparent;
+ padding:2px 0;text-align:left;color:inherit;cursor:pointer;
+ font:inherit;line-height:1.35;border-radius:8px;
+}
+.grocery-open small{font:inherit;font-size:12px;font-weight:400;color:#f0ccb0}
+.grocery-open:focus-visible{outline:2px solid #ffe5be;outline-offset:4px}
+.grocery-product-preview,.grocery-detail-photo{
+ display:block;width:100%;max-height:300px;object-fit:contain;
+ background:#3b211a;border:1px solid #f0cfae;border-radius:16px;
+ margin:12px 0;
+}
+.grocery-detail-photo{max-height:min(50vh,420px);margin:5px 0 16px}
+.grocery-photo-placeholder{
+ min-height:120px;display:flex;align-items:center;justify-content:center;
+ padding:15px;text-align:center;border:1px dashed #c99475;
+ border-radius:14px;background:#482b21;color:#f0ccb0;font-size:13px;
+ margin:10px 0;
+}
+.grocery-photo-field input[type="file"]{font-size:16px;max-width:100%}
+.grocery-photo-field #remove-grocery-photo{margin-top:7px}
+.grocery-photo-field #remove-grocery-photo[hidden]{display:none}
