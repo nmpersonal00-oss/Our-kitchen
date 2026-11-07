@@ -569,3 +569,100 @@ html,body,.app,.app *{touch-action:manipulation}
  font-family:'Trebuchet MS',system-ui,sans-serif;
  font-size:15px;
 }
+
+
+/* Adaptive photo frames: hug the actual image rather than drawing a wide,
+   height-limited rectangle around a portrait iPhone photo. Natural proportions
+   and all saved image bytes are retained; only presentation is changed. */
+.grocery-detail-sheet .grocery-detail-image{
+ display:flex;
+ width:100%;
+ min-width:0;
+ align-items:center;
+ justify-content:center;
+}
+.grocery-detail-sheet .grocery-detail-image > .grocery-detail-photo{
+ display:block;
+ flex:0 1 auto;
+ width:auto;
+ height:auto;
+ max-width:100%;
+ max-height:min(40dvh,340px);
+ margin:0 auto;
+ object-fit:contain;
+ object-position:center;
+ border:2px solid #fbe2c6;
+ border-radius:19px;
+ box-shadow:0 7px 22px rgba(30,13,8,.32);
+ background:transparent;
+}
+.grocery-photo-field #grocery-photo-preview{
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
+ width:100%;
+ min-width:0;
+ max-width:100%;
+ overflow:hidden;
+}
+.grocery-photo-field #grocery-photo-preview .grocery-product-preview{
+ display:block;
+ flex:0 1 auto;
+ width:auto;
+ height:auto;
+ max-width:100%;
+ max-height:min(34dvh,300px);
+ margin:8px auto 11px;
+ object-fit:contain;
+ object-position:center;
+ border:1.5px solid #fbe0be;
+ border-radius:17px;
+ box-shadow:0 5px 17px rgba(30,13,8,.25);
+ background:transparent;
+}
+.overlay.card-popup-overlay .recipe-detail-sheet > .detail-photo{
+ display:block;
+ width:auto;
+ height:auto;
+ max-width:100%;
+ max-height:min(40dvh,340px);
+ margin:0 auto 16px;
+ object-fit:contain;
+ object-position:center;
+ border:1.5px solid #fbe0be;
+ border-radius:18px;
+ box-shadow:0 5px 17px rgba(30,13,8,.25);
+ background:transparent;
+}
+.overlay.card-popup-overlay .recipe-detail-sheet .detail-step img{
+ display:block;
+ width:auto;
+ height:auto;
+ max-width:100%;
+ max-height:min(33dvh,270px);
+ margin:10px auto;
+ object-fit:contain;
+ object-position:center;
+}
+.overlay.card-popup-overlay .editor-sheet .step-editor img,
+.overlay.card-popup-overlay .editor-sheet .image-preview{
+ display:block;
+ width:auto;
+ height:auto;
+ max-width:100%;
+ margin:8px auto;
+ object-fit:contain;
+ object-position:center;
+}
+@media(max-height:650px){
+ .grocery-detail-sheet .grocery-detail-image > .grocery-detail-photo{
+  max-height:min(30dvh,235px);
+ }
+ .grocery-photo-field #grocery-photo-preview .grocery-product-preview{
+  max-height:min(26dvh,190px);
+ }
+ .overlay.card-popup-overlay .recipe-detail-sheet > .detail-photo{
+  max-height:min(30dvh,235px);
+ }
+}
