@@ -480,10 +480,15 @@ async function cloudImageOut(v,id,slot){
 async function cloudExpand(kind,v){
  const x=structuredClone(v||{});
  if(kind==='recipe'){
+  // Keep local image bytes so every cover and step photo works offline.
+  // Save private cloud references separately for later metadata-only edits.
+  x.photoCloud=x.photo?.startsWith?.('lk-photo:')?x.photo:null;
   x.photo=await cloudImageIn(x.photo);
-  for(const step of x.steps||[])step.photo=await cloudImageIn(step.photo);
+  for(const step of x.steps||[]){
+   step.photoCloud=step.photo?.startsWith?.('lk-photo:')?step.photo:null;
+   step.photo=await cloudImageIn(step.photo);
+  }
  }else if(kind==='grocery'){
-  // Retain the uploaded file reference locally while keeping offline image bytes.
   x.photoCloud=x.photo?.startsWith?.('lk-photo:')?x.photo:null;
   x.photo=await cloudImageIn(x.photo);
  }
@@ -492,10 +497,17 @@ async function cloudExpand(kind,v){
 async function cloudPrepare(kind,r){
  const x=structuredClone(r);
  if(kind==='recipe'){
-  x.photo=await cloudImageOut(x.photo,r.id,'cover');
-  for(const st of x.steps||[])st.photo=await cloudImageOut(st.photo,r.id,st.id||'step');
+  // Never upload the same photo again when changing text, favorites or steps.
+  // Only upload new images; local cached photo bytes stay available offline.
+  x.photo=x.photo?.startsWith?.('data:image/')&&x.photoCloud?.startsWith?.('lk-photo:')
+   ?x.photoCloud:await cloudImageOut(x.photo,r.id,'cover');
+  delete x.photoCloud;
+  for(const st of x.steps||[]){
+   st.photo=st.photo?.startsWith?.('data:image/')&&st.photoCloud?.startsWith?.('lk-photo:')
+    ?st.photoCloud:await cloudImageOut(st.photo,r.id,st.id||'step');
+   delete st.photoCloud;
+  }
  }else if(kind==='grocery'){
-  // Checkbox changes reuse the existing photo instead of uploading a duplicate.
   x.photo=x.photo?.startsWith?.('data:image/')&&x.photoCloud?.startsWith?.('lk-photo:')
    ?x.photoCloud:await cloudImageOut(x.photo,r.id,'product');
   delete x.photoCloud;
