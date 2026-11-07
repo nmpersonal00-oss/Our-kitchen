@@ -29,18 +29,20 @@ scene.after(sceneFade);
 const sceneImages=new Map();
 let requestedScene=SCENES.grocery,sceneGeneration=0,sceneFinishTimer=0;
 function warmScene(path){
- if(sceneImages.has(path))return sceneImages.get(path);
+ const cached=sceneImages.get(path);
+ if(cached)return cached.loaded;
  const image=new Image();
+ image.decoding='async';
  const loaded=new Promise(resolve=>{
   image.onload=()=>{
    if(typeof image.decode==='function')image.decode().then(()=>resolve(true),()=>resolve(true));
    else resolve(true);
   };
-  image.onerror=()=>resolve(false);
+  image.onerror=()=>{sceneImages.delete(path);resolve(false)};
   image.src=path;
  });
- // Retain Image object until decode completes, then let the browser manage memory.
- sceneImages.set(path,loaded);
+ // Keep decoded backgrounds available for near-instant repeat tab switches.
+ sceneImages.set(path,{image,loaded});
  return loaded;
 }
 function prefetchScenes(){
