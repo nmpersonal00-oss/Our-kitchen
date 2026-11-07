@@ -1,10 +1,10 @@
 /* Offline shell for The Little Kitchen. IndexedDB groceries and outbox remain untouched. */
-const CACHE = 'little-kitchen-v31-adaptive-photos';
+const CACHE = 'little-kitchen-v32-step-photo-zoom';
 const CORE = [
   './index.html',
   './v2/index.html',
-  './v2/kitchen.css?v=3.0-adaptive-photos',
-  './v2/kitchen.js?v=3.1-recipe-images',
+  './v2/kitchen.css?v=3.1-step-photo-zoom',
+  './v2/kitchen.js?v=3.2-step-photo-zoom',
   // The original sample covers and matching backup art must work offline,
   // including previously installed phones that haven't opened each recipe.
   './exact-pumpkin-soup.webp',
