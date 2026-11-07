@@ -1,10 +1,28 @@
 /* Offline shell for The Little Kitchen. IndexedDB groceries and outbox remain untouched. */
-const CACHE = 'little-kitchen-v29-all-tab-bubbles';
+const CACHE = 'little-kitchen-v30-recipe-images';
 const CORE = [
   './index.html',
   './v2/index.html',
-  './v2/kitchen.css?v=2.8-all-tab-bubbles',
-  './v2/kitchen.js?v=3.0-all-tab-bubbles'
+  './v2/kitchen.css?v=2.9-recipe-images',
+  './v2/kitchen.js?v=3.1-recipe-images',
+  // The original sample covers and matching backup art must work offline,
+  // including previously installed phones that haven't opened each recipe.
+  './exact-pumpkin-soup.webp',
+  './exact-herb-pasta.webp',
+  './exact-chai-latte.webp',
+  './exact-spiced-cider.webp',
+  './exact-cinnamon-rolls.webp',
+  './exact-apple-crumble.webp',
+  './exact-strawberry-cake.webp',
+  './exact-brownies.webp',
+  './reference-recipe-pumpkin-soup.webp',
+  './reference-recipe-herb-pasta.webp',
+  './reference-recipe-chai-latte.webp',
+  './reference-recipe-spiced-cider.webp',
+  './reference-recipe-cinnamon-rolls.webp',
+  './reference-recipe-apple-crumble.webp',
+  './reference-recipe-strawberry.webp',
+  './reference-recipe-brownie.webp'
 ];
 const EXTRAS = [
   './manifest.webmanifest?v=20261103-bunny-cooking',
