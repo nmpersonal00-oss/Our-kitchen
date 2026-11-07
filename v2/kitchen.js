@@ -183,13 +183,14 @@ const RECIPE_FALLBACKS={
  'demo-cake':'../reference-recipe-strawberry.webp',
  'demo-brownies':'../reference-recipe-brownie.webp'
 };
-const recipeCover=r=>SRC(r.photo)||(
- SAMPLE.find(item=>item[0]===r.id)?.[3]
-  ?'../'+SAMPLE.find(item=>item[0]===r.id)[3]
-  :''
-);
+const recipeCover=r=>{
+ const source=SRC(r.photo);
+ if(source)return source;
+ const demo=SAMPLE.find(item=>item[0]===r.id);
+ return demo?'../'+demo[3]:'';
+};
 const recipeImage=r=>`src="${esc(recipeCover(r))}" data-recipe-image="true" data-fallback-image="${esc(RECIPE_FALLBACKS[r.id]||'')}"`;
-function recipeCard(r){return `<article class="recipe-card"><div class="thumb-wrap"><button class="card-open" data-action="open-recipe" data-id="${esc(r.id)}" aria-label="Open ${esc(r.title)}"><img class="thumb" ${recipeImage(r)} alt="${esc(r.title)}" loading="lazy"></button><button class="fav ${r.favorite?'on':''}" data-action="favorite" data-id="${esc(r.id)}" aria-label="Toggle favorite">${r.favorite?'♥':'♡'}</button></div><div class="card-inner"><div class="card-cat">${esc(label(r.category).toUpperCase())}</div><button class="card-open" data-action="open-recipe" data-id="${esc(r.id)}"><h2 class="card-title">${esc(r.title)}</h2></button><div class="card-meta"><span>◷ ${Number(r.minutes)||0} min</span><span>♧ ${Number(r.servings)||1} servings</span></div></div></article>`}
+function recipeCard(r){return `<article class="recipe-card"><div class="thumb-wrap"><button class="card-open" data-action="open-recipe" data-id="${esc(r.id)}" aria-label="Open ${esc(r.title)}">${recipeCover(r)?`<img class="thumb" ${recipeImage(r)} alt="${esc(r.title)}" loading="lazy" decoding="async">`:'<span class="recipe-no-photo" aria-label="No photo added">♡</span>'}</button><button class="fav ${r.favorite?'on':''}" data-action="favorite" data-id="${esc(r.id)}" aria-label="Toggle favorite">${r.favorite?'♥':'♡'}</button></div><div class="card-inner"><div class="card-cat">${esc(label(r.category).toUpperCase())}</div><button class="card-open" data-action="open-recipe" data-id="${esc(r.id)}"><h2 class="card-title">${esc(r.title)}</h2></button><div class="card-meta"><span>◷ ${Number(r.minutes)||0} min</span><span>♧ ${Number(r.servings)||1} servings</span></div></div></article>`}
 // The photo files themselves are preserved. Failed requests try the matching
 // alternate demo cover once, then show a clean card background rather than
 // an endless broken-image icon or a stretched generic scene background.
@@ -238,7 +239,7 @@ function closeOverlay(){
  editDraft=null;$('#add-float').hidden=false;
 }
 function sheetHead(title){return `<div class="sheet-head"><h2 id="popup-sheet-heading">${esc(title)}</h2><button class="close" data-action="close" aria-label="Close">×</button></div>`}
-function openRecipe(id){const r=recipes.find(x=>x.id===id);if(!r)return;selected=id;showOverlay(`${sheetHead(r.title)}<img class="detail-photo" ${recipeImage(r)} alt="Photo of ${esc(r.title)}"><p>${esc(label(r.category))} · ${Number(r.minutes)||0} min · ${Number(r.servings)||1} servings</p><p>${esc(r.description||'')}</p><div class="actions"><button class="primary" data-action="edit-recipe" data-id="${esc(id)}">✎ Edit recipe</button><button class="secondary" data-action="recipe-to-grocery" data-id="${esc(id)}">+ Shopping list</button></div><h2>Ingredients</h2><ul class="detail-list">${(r.ingredients||[]).map(x=>`<li>${esc(typeof x==='string'?x:x.name||'')}</li>`).join('')}</ul><h2>Steps</h2>${(r.steps||[]).map((st,i)=>`<section class="detail-step"><h3>Step ${i+1}</h3><p>${esc(st.text||'')}</p>${st.photo?`<img src="${dsrc(st.photo)}" alt="Photo for step ${i+1}">`:''}${st.note?`<p class="hint">${esc(st.note)}</p>`:''}</section>`).join('')}<p>${esc(r.notes||'')}</p><div class="actions"><button class="secondary" data-action="delete-recipe" data-id="${esc(id)}">Delete recipe</button></div>`,'recipe-detail')}
+function openRecipe(id){const r=recipes.find(x=>x.id===id);if(!r)return;selected=id;showOverlay(`${sheetHead(r.title)}${recipeCover(r)?`<img class="detail-photo" ${recipeImage(r)} alt="Photo of ${esc(r.title)}">`:'<div class="recipe-detail-no-photo">♡<small>No photo added yet</small></div>'}<p>${esc(label(r.category))} · ${Number(r.minutes)||0} min · ${Number(r.servings)||1} servings</p><p>${esc(r.description||'')}</p><div class="actions"><button class="primary" data-action="edit-recipe" data-id="${esc(id)}">✎ Edit recipe</button><button class="secondary" data-action="recipe-to-grocery" data-id="${esc(id)}">+ Shopping list</button></div><h2>Ingredients</h2><ul class="detail-list">${(r.ingredients||[]).map(x=>`<li>${esc(typeof x==='string'?x:x.name||'')}</li>`).join('')}</ul><h2>Steps</h2>${(r.steps||[]).map((st,i)=>`<section class="detail-step"><h3>Step ${i+1}</h3><p>${esc(st.text||'')}</p>${st.photo?`<img src="${dsrc(st.photo)}" alt="Photo for step ${i+1}">`:''}${st.note?`<p class="hint">${esc(st.note)}</p>`:''}</section>`).join('')}<p>${esc(r.notes||'')}</p><div class="actions"><button class="secondary" data-action="delete-recipe" data-id="${esc(id)}">Delete recipe</button></div>`,'recipe-detail')}
 function newDraft(category){return {id:uid(),title:'',category:category||'food',description:'',difficulty:'Easy',minutes:30,servings:2,photo:'',favorite:false,ingredients:[],steps:[{id:uid(),text:'',note:'',photo:''}],createdAt:now()}}
 function formField(name,title,value='',type='text'){return `<div class="field"><label for="f-${name}">${esc(title)}</label><input id="f-${name}" name="${name}" type="${type}" value="${esc(value)}"></div>`}
 function editRecipe(id){const r=recipes.find(x=>x.id===id);editDraft=r?structuredClone(r):newDraft(['food','drink','dessert'].includes(tab)?tab:'food');renderEditor()}
