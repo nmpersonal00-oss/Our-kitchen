@@ -830,3 +830,18 @@ html,body,.app,.app *{touch-action:manipulation}
 @media(prefers-reduced-motion:reduce){
  .step-lightbox-stage .step-lightbox-image{will-change:auto}
 }
+
+
+/* Allow removal of an uploaded cover or cooking-step photo without removing
+   the recipe or step. Reuses the existing editor's visual language. */
+.overlay.card-popup-overlay .editor-sheet .recipe-remove-photo{
+ display:block;
+ width:100%;
+ min-height:46px;
+ margin:8px 0 13px;
+ padding:10px 14px;
+ border-radius:13px;
+ font-size:15px;
+ font-weight:700;
+ touch-action:manipulation;
+}
