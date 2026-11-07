@@ -575,11 +575,30 @@ async function syncCloud(){
     .select('record_id').single();
    if(pushError)throw pushError;
    if(saved?.record_id!==task.recordId)throw Error('Cloud did not confirm the save');
-   // Remember successful uploads locally without modifying the synced version.
+   // Keep successfully uploaded references locally, without modifying
+   // timestamps or re-uploading photos on text/favorite/checkbox changes.
    if(task.kind==='grocery'&&payload.photo?.startsWith?.('lk-photo:')){
     const latest=(await getAll('groceries')).find(x=>x.id===task.recordId);
     if(latest?.photo===record?.photo&&latest.photoCloud!==payload.photo)
      await write('groceries',{...latest,photoCloud:payload.photo});
+   }
+   if(task.kind==='recipe'&&!deleted){
+    const latest=(await getAll('recipes')).find(x=>x.id===task.recordId);
+    if(latest){
+     let changed=false;
+     if(payload.photo?.startsWith?.('lk-photo:')&&latest.photo===record.photo&&latest.photoCloud!==payload.photo){
+      latest.photoCloud=payload.photo;changed=true;
+     }
+     const sentSteps=new Map((payload.steps||[]).map(st=>[st.id,st]));
+     const originalSteps=new Map((record.steps||[]).map(st=>[st.id,st]));
+     for(const step of latest.steps||[]){
+      const sent=sentSteps.get(step.id),old=originalSteps.get(step.id);
+      if(sent?.photo?.startsWith?.('lk-photo:')&&old&&step.photo===old.photo&&step.photoCloud!==sent.photo){
+       step.photoCloud=sent.photo;changed=true;
+      }
+     }
+     if(changed)await write('recipes',latest);
+    }
    }
    const taskNow=(await getAll('outbox')).find(x=>x.key===task.key);
    if(taskNow?.at===task.at)await remove('outbox',task.key);
