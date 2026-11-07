@@ -270,7 +270,8 @@ async function cloudExpand(kind,v){
   x.photo=await cloudImageIn(x.photo);
   for(const step of x.steps||[])step.photo=await cloudImageIn(step.photo);
  }else if(kind==='grocery'){
-  // Hydrate once while online; IndexedDB holds actual photo bytes for offline use.
+  // Retain the uploaded file reference locally while keeping offline image bytes.
+  x.photoCloud=x.photo?.startsWith?.('lk-photo:')?x.photo:null;
   x.photo=await cloudImageIn(x.photo);
  }
  return x;
@@ -281,8 +282,10 @@ async function cloudPrepare(kind,r){
   x.photo=await cloudImageOut(x.photo,r.id,'cover');
   for(const st of x.steps||[])st.photo=await cloudImageOut(st.photo,r.id,st.id||'step');
  }else if(kind==='grocery'){
-  // Upload using the existing private bucket. Never put large data URIs in JSON.
-  x.photo=await cloudImageOut(x.photo,r.id,'product');
+  // Checkbox changes reuse the existing photo instead of uploading a duplicate.
+  x.photo=x.photo?.startsWith?.('data:image/')&&x.photoCloud?.startsWith?.('lk-photo:')
+   ?x.photoCloud:await cloudImageOut(x.photo,r.id,'product');
+  delete x.photoCloud;
  }
  return x;
 }
@@ -347,6 +350,12 @@ async function syncCloud(){
     .select('record_id').single();
    if(pushError)throw pushError;
    if(saved?.record_id!==task.recordId)throw Error('Cloud did not confirm the save');
+   // Remember successful uploads locally without modifying the synced version.
+   if(task.kind==='grocery'&&payload.photo?.startsWith?.('lk-photo:')){
+    const latest=(await getAll('groceries')).find(x=>x.id===task.recordId);
+    if(latest?.photo===record?.photo&&latest.photoCloud!==payload.photo)
+     await write('groceries',{...latest,photoCloud:payload.photo});
+   }
    const taskNow=(await getAll('outbox')).find(x=>x.key===task.key);
    if(taskNow?.at===task.at)await remove('outbox',task.key);
   }
@@ -435,7 +444,7 @@ document.addEventListener('change',async e=>{try{if(e.target.dataset.action==='c
  try{const photo=await photoPending;if(editDraft===draft){draft.steps[index].photo=photo;renderEditor()}}
  finally{photoPending=null}
  }}catch(err){console.error(err);showToast(err.message)}});
-document.addEventListener('submit',async e=>{const f=e.target;if(!['recipe-form','grocery-form','cloud-login'].includes(f.id))return;e.preventDefault();try{if(f.id==='recipe-form'){if(photoPending)await photoPending;readEditor();if(!editDraft.title.trim())throw Error('Enter a recipe name');const cover=f.querySelector('[name="cover-photo"]');if(cover.files?.[0])editDraft.photo=await imageData(cover.files[0]);editDraft.steps=editDraft.steps.filter(st=>st.text.trim());await save('recipes',editDraft);closeOverlay();showToast('Recipe saved')}if(f.id==='grocery-form'){const data=new FormData(f);const n=String(data.get('name')||'').trim();if(!n)throw Error('Enter item name');const original=groceries.find(x=>x.id===selected)||{id:uid(),checked:false,category:'pantry',createdAt:now()};if(groceryPhotoPending){groceryPhotoDraft=await groceryPhotoPending}const stillChecked=isGroceryChecked(original);await save('groceries',{...original,checked:stillChecked,checkedAt:stillChecked?(original.checkedAt||original.updatedAt):null,name:n,qty:Math.max(.01,Number(data.get('qty'))||1),unit:String(data.get('unit')||''),notes:String(data.get('notes')||''),priority:data.has('priority'),photo:groceryPhotoDraft});closeOverlay();showToast('Item saved')}if(f.id==='cloud-login'){if(!cloud)throw Error('Cloud unavailable');cloudLabel('Signing in…');const data=new FormData(f);const res=await cloud.auth.signInWithPassword({email:String(data.get('email')||''),password:String(data.get('password')||'')});if(res.error)throw res.error;cloudUser=res.data.user;cloudReady=true;requestSync();render(true)}}catch(err){console.error(err);showToast(err.message||'Could not save')}});
+document.addEventListener('submit',async e=>{const f=e.target;if(!['recipe-form','grocery-form','cloud-login'].includes(f.id))return;e.preventDefault();try{if(f.id==='recipe-form'){if(photoPending)await photoPending;readEditor();if(!editDraft.title.trim())throw Error('Enter a recipe name');const cover=f.querySelector('[name="cover-photo"]');if(cover.files?.[0])editDraft.photo=await imageData(cover.files[0]);editDraft.steps=editDraft.steps.filter(st=>st.text.trim());await save('recipes',editDraft);closeOverlay();showToast('Recipe saved')}if(f.id==='grocery-form'){const data=new FormData(f);const n=String(data.get('name')||'').trim();if(!n)throw Error('Enter item name');const original=groceries.find(x=>x.id===selected)||{id:uid(),checked:false,category:'pantry',createdAt:now()};if(groceryPhotoPending){groceryPhotoDraft=await groceryPhotoPending}const stillChecked=isGroceryChecked(original);await save('groceries',{...original,checked:stillChecked,checkedAt:stillChecked?(original.checkedAt||original.updatedAt):null,name:n,qty:Math.max(.01,Number(data.get('qty'))||1),unit:String(data.get('unit')||''),notes:String(data.get('notes')||''),priority:data.has('priority'),photo:groceryPhotoDraft,photoCloud:groceryPhotoDraft===original.photo?(original.photoCloud||null):null});closeOverlay();showToast('Item saved')}if(f.id==='cloud-login'){if(!cloud)throw Error('Cloud unavailable');cloudLabel('Signing in…');const data=new FormData(f);const res=await cloud.auth.signInWithPassword({email:String(data.get('email')||''),password:String(data.get('password')||'')});if(res.error)throw res.error;cloudUser=res.data.user;cloudReady=true;requestSync();render(true)}}catch(err){console.error(err);showToast(err.message||'Could not save')}});
 $('#import-file').addEventListener('change',e=>{const f=e.target.files?.[0];e.target.value='';importBackup(f)});
 // An offline launch still works from IndexedDB. Load the cloud client once
 // connectivity returns so offline grocery edits are uploaded automatically.
