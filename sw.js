@@ -1,10 +1,10 @@
 /* Offline shell for The Little Kitchen. IndexedDB groceries and outbox remain untouched. */
-const CACHE = 'little-kitchen-v22-grocery-offline';
+const CACHE = 'little-kitchen-v23-fluid-tabs';
 const CORE = [
   './index.html',
   './v2/index.html',
-  './v2/kitchen.css?v=2.1-stickers',
-  './v2/kitchen.js?v=2.3-grocery-offline'
+  './v2/kitchen.css?v=2.2-fluid-tabs',
+  './v2/kitchen.js?v=2.4-fluid-tabs'
 ];
 const EXTRAS = [
   './manifest.webmanifest?v=20261103-bunny-cooking',
@@ -12,11 +12,19 @@ const EXTRAS = [
   './v2/settings-bunny.webp?v=2',
   './v2/groceries-bunny.webp?v=2',
   './reference-grocery.png',
+  './reference-recipes.png',
+  './reference-food.png',
+  './reference-drink.png',
+  './reference-dessert.png',
+  './reference-settings.png',
   './little-kitchen-cooking-icon-192.png',
   './little-kitchen-cooking-icon-512.png',
   './little-kitchen-cooking-apple-touch.png'
 ];
-const CACHE_FIRST = new Set([...CORE, './reference-grocery.png', './v2/groceries-bunny.webp?v=2']
+const CACHE_FIRST = new Set([...CORE,
+  './reference-grocery.png', './reference-recipes.png', './reference-food.png',
+  './reference-drink.png', './reference-dessert.png', './reference-settings.png',
+  './v2/groceries-bunny.webp?v=2', './v2/settings-bunny.webp?v=2']
   .map(path => new URL(path, self.registration.scope).href));
 
 self.addEventListener('install', event => {
