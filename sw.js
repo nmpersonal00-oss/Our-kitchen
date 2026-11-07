@@ -1,10 +1,10 @@
 /* Offline shell for The Little Kitchen. IndexedDB groceries and outbox remain untouched. */
-const CACHE = 'little-kitchen-v24-grocery-photos';
+const CACHE = 'little-kitchen-v25-readable-groceries';
 const CORE = [
   './index.html',
   './v2/index.html',
-  './v2/kitchen.css?v=2.3-grocery-photos',
-  './v2/kitchen.js?v=2.5-grocery-photos'
+  './v2/kitchen.css?v=2.4-readable-groceries',
+  './v2/kitchen.js?v=2.6-readable-groceries'
 ];
 const EXTRAS = [
   './manifest.webmanifest?v=20261103-bunny-cooking',
