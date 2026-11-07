@@ -178,3 +178,133 @@ html,body,.app,.app *{touch-action:manipulation}
  #grocery-items .row-actions .text-button{width:44px;min-width:44px;height:48px;min-height:48px}
  #grocery-items .grocery-open{font-size:22px}
 }
+
+
+/* Grocery item details only: a soft, centered popup instead of the full-screen
+   recipe/editor sheet. Does not change any recipe overlay or grocery editor. */
+.overlay.grocery-detail-overlay{
+ align-items:center;justify-content:center;
+ padding:calc(16px + var(--top)) 15px calc(16px + var(--bottom));
+ background:rgba(29,13,10,.73);
+ -webkit-backdrop-filter:blur(5px);
+ backdrop-filter:blur(5px);
+}
+.overlay.grocery-detail-overlay .grocery-detail-sheet{
+ position:relative;
+ flex:0 1 auto;
+ width:min(100%,420px);
+ height:auto;max-height:100%;
+ margin:0;
+ padding:19px clamp(18px,5vw,26px) 24px;
+ border:2px solid #ffe3c3;
+ border-radius:30px;
+ overflow-y:auto;
+ overscroll-behavior:contain;
+ background:linear-gradient(155deg,#966047 0%,#77432f 48%,#4b2921 100%);
+ box-shadow:0 17px 50px rgba(25,8,5,.67),0 0 0 5px rgba(255,209,166,.12),inset 0 2px 19px rgba(255,238,205,.16);
+ animation:lk-grocery-card-pop .26s cubic-bezier(.2,.85,.25,1) both;
+}
+@keyframes lk-grocery-card-pop{
+ from{opacity:0;transform:translateY(13px) scale(.93)}
+ to{opacity:1;transform:translateY(0) scale(1)}
+}
+.grocery-detail-heading{
+ position:relative;
+ padding:31px 5px 4px;
+ margin:0 0 13px;
+ text-align:center;
+}
+.grocery-detail-heading h2{
+ margin:0;
+ font-family:Georgia,serif;
+ font-size:clamp(33px,9vw,45px);
+ font-weight:700;
+ line-height:1.12;
+ letter-spacing:-.6px;
+ color:#fff4df;
+ text-shadow:0 2px 8px rgba(49,23,13,.35);
+ overflow-wrap:anywhere;
+}
+.grocery-detail-close{
+ position:absolute;top:0;right:0;
+ display:grid;place-items:center;
+ width:43px;height:43px;
+ border-radius:50%;
+ border:1.5px solid #ffe1bc;
+ background:rgba(68,33,24,.7);
+ color:#fff0da;
+ font-size:28px;line-height:1;
+ cursor:pointer;
+}
+.grocery-detail-image{margin:0 0 15px}
+.grocery-detail-sheet .grocery-detail-photo{
+ display:block;
+ width:100%;height:auto;max-height:min(35dvh,270px);
+ object-fit:contain;
+ margin:0;
+ border-radius:19px;
+ border:1.5px solid #fbe0be;
+ background:rgba(55,28,21,.7);
+ box-shadow:0 4px 15px rgba(35,17,11,.27);
+}
+.grocery-detail-photo-empty{
+ display:flex;align-items:center;justify-content:center;flex-direction:column;
+ min-height:118px;
+ padding:12px 15px;
+ border:1px dashed rgba(255,222,185,.65);
+ border-radius:18px;
+ background:rgba(68,35,25,.56);
+ text-align:center;
+}
+.grocery-detail-photo-empty span{font-size:33px;line-height:1;color:#ffe5c5}
+.grocery-detail-photo-empty p{
+ max-width:260px;
+ margin:8px 0 0;
+ font-size:15px;font-weight:600;line-height:1.4;
+ color:#ffe6cc;
+}
+.grocery-detail-facts{display:grid;gap:10px;margin:0 0 19px}
+.grocery-detail-fact{
+ display:flex;flex-direction:column;gap:4px;
+ padding:11px 15px;
+ border:1px solid rgba(253,218,181,.64);
+ border-radius:16px;
+ background:rgba(68,34,25,.55);
+ box-shadow:inset 0 1px 4px rgba(255,225,196,.09);
+}
+.grocery-detail-fact-label{
+ font-size:12px;font-weight:800;
+ letter-spacing:1.5px;text-transform:uppercase;
+ color:#ffe1bf;
+}
+.grocery-detail-fact-value{
+ font-family:Georgia,serif;
+ font-size:clamp(21px,5.5vw,25px);
+ font-weight:700;
+ line-height:1.25;
+ color:#fff7e8;
+ overflow-wrap:anywhere;
+}
+.grocery-detail-notes{
+ white-space:pre-wrap;
+ font-size:clamp(19px,5vw,23px);
+}
+.grocery-detail-actions{margin:0;gap:9px}
+.grocery-detail-actions button{
+ min-height:49px;
+ border-radius:14px;
+ font-size:16px;
+ font-weight:800;
+ white-space:normal;
+}
+.grocery-detail-close:focus-visible,.grocery-detail-actions button:focus-visible{
+ outline:2px solid #fff2d7;outline-offset:3px;
+}
+@media(max-height:650px){
+ .overlay.grocery-detail-overlay{padding-top:11px;padding-bottom:11px}
+ .grocery-detail-heading h2{font-size:clamp(30px,8vw,39px)}
+ .grocery-detail-sheet .grocery-detail-photo{max-height:min(28dvh,205px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .overlay.grocery-detail-overlay .grocery-detail-sheet{animation:none!important}
+}
