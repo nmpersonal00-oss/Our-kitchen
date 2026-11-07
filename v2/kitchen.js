@@ -21,6 +21,62 @@ window.addEventListener('pageshow',resizeInstalledPhone);
 
 const $=s=>document.querySelector(s), content=$('#content'), overlay=$('#overlay'), scene=$('#scene');
 const SCENES={grocery:'../reference-grocery.png',recipes:'../reference-recipes.png',food:'../reference-food.png',drink:'../reference-drink.png',dessert:'../reference-dessert.png',settings:'../reference-settings.png'};
+// Keep the existing artwork visible while the next large background loads and
+// decodes. Crossfade the predecoded image instead of showing an empty scene.
+const sceneFade=document.createElement('div');
+sceneFade.className='scene scene-fade';
+scene.after(sceneFade);
+const sceneImages=new Map();
+let requestedScene=SCENES.grocery,sceneGeneration=0,sceneFinishTimer=0;
+function warmScene(path){
+ if(sceneImages.has(path))return sceneImages.get(path);
+ const image=new Image();
+ const loaded=new Promise(resolve=>{
+  image.onload=()=>{
+   if(typeof image.decode==='function')image.decode().then(()=>resolve(true),()=>resolve(true));
+   else resolve(true);
+  };
+  image.onerror=()=>resolve(false);
+  image.src=path;
+ });
+ // Retain Image object until decode completes, then let the browser manage memory.
+ sceneImages.set(path,loaded);
+ return loaded;
+}
+function prefetchScenes(){
+ // Start after first paint and load sequentially to avoid choking mobile networks.
+ const paths=[SCENES.recipes,SCENES.food,SCENES.drink,SCENES.dessert,SCENES.settings];
+ const warm=async()=>{for(const path of paths)await warmScene(path)};
+ if('requestIdleCallback' in window)window.requestIdleCallback(warm,{timeout:1200});
+ else setTimeout(warm,200);
+}
+function paintScene(path){
+ if(path===requestedScene)return;
+ requestedScene=path;
+ const generation=++sceneGeneration;
+ warmScene(path).then(ready=>{
+  if(!ready||generation!==sceneGeneration)return;
+  clearTimeout(sceneFinishTimer);
+  // When switching rapidly, preserve the currently visible image as the base.
+  if(sceneFade.style.opacity==='1')scene.style.backgroundImage=sceneFade.style.backgroundImage;
+  sceneFade.style.transition='none';
+  sceneFade.style.opacity='0';
+  sceneFade.style.backgroundImage="url('"+path+"')";
+  // Wait until the new bitmap is in the layer before animating opacity.
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+   if(generation!==sceneGeneration)return;
+   sceneFade.style.transition='';
+   sceneFade.style.opacity='1';
+   sceneFinishTimer=setTimeout(()=>{
+    if(generation!==sceneGeneration)return;
+    scene.style.backgroundImage="url('"+path+"')";
+    sceneFade.style.transition='none';
+    sceneFade.style.opacity='0';
+   },280);
+  }));
+ });
+}
+
 const CATS={food:'Food',drink:'Drinks',dessert:'Desserts'};
 const DB_NAME='little-kitchen-recipes-v1',DB_VERSION=3;
 const CLOUD_URL='https://pptbmupnpxigwfqkdpzt.supabase.co',CLOUD_KEY='sb_publishable_HBQoTJb2-tXAaOHifY9x4A_SXMDZLgr',BUCKET='lk-private-photos';
@@ -28,11 +84,11 @@ let db=null, recipes=[],groceries=[],tab='grocery',filter='all',search='',grocer
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>window.crypto?.randomUUID?.()||'lk-'+Date.now()+'-'+Math.random().toString(36).slice(2);
 const now=()=>new Date().toISOString();
-// Grocery checks belong to the shopping day that begins at 3 a.m. local time.
+// Grocery checks belong to the shopping day that begins at 3 p.m. local time.
 // Stored grocery items are permanent; a past day's checkmark simply expires.
 function groceryDayStart(at=new Date()){
  const boundary=new Date(at);
- boundary.setHours(3,0,0,0);
+ boundary.setHours(15,0,0,0);
  if(at.getTime()<boundary.getTime())boundary.setDate(boundary.getDate()-1);
  return boundary.getTime();
 }
@@ -51,7 +107,7 @@ function refreshGroceryDay(){
 function scheduleGroceryReset(){
  clearTimeout(groceryResetTimer);
  const boundary=new Date();
- boundary.setHours(3,0,0,0);
+ boundary.setHours(15,0,0,0);
  if(boundary.getTime()<=Date.now())boundary.setDate(boundary.getDate()+1);
  groceryResetTimer=setTimeout(()=>{
   refreshGroceryDay();
@@ -110,7 +166,7 @@ const SAMPLE=[
  ['demo-brownies','Chocolate Berry Brownies','dessert','exact-brownies.webp',45,9,['1 cup chocolate','½ cup butter','¾ cup sugar','2 eggs','½ cup flour','½ cup berries'],['Melt chocolate with butter.','Whisk in sugar, eggs and flour.','Fold in berries.','Bake until the center is fudgy.']]
 ];
 async function seedOnce(){const meta=await getAll('meta');if(meta.some(x=>x.key==='initialized'))return;const existing=await getAll('recipes');if(existing.length===0)for(const s of SAMPLE){await write('recipes',{id:s[0],title:s[1],category:s[2],photo:'../'+s[3],minutes:s[4],servings:s[5],favorite:false,difficulty:'Easy',ingredients:s[6],steps:s[7].map((text,i)=>({id:'step-'+i,text,photo:'',note:''})),createdAt:now(),updatedAt:now()})}await write('meta',{key:'initialized',value:true})}
-function setScene(){const art=SCENES[tab]||SCENES.recipes;scene.style.backgroundImage=`url('${art}')`;$('#header-action').textContent=tab==='settings'?'×':'+';$('#header-action').dataset.action=tab==='settings'?'close-settings':'new-recipe';$('#header-action').style.visibility=tab==='grocery'?'hidden':'visible';$('#add-float').style.display=['recipes','food','drink','dessert'].includes(tab)?'block':'none';$('#bottom-tabs').querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b.dataset.tab===tab);b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false')})}
+function setScene(){const art=SCENES[tab]||SCENES.recipes;paintScene(art);$('#header-action').textContent=tab==='settings'?'×':'+';$('#header-action').dataset.action=tab==='settings'?'close-settings':'new-recipe';$('#header-action').style.visibility=tab==='grocery'?'hidden':'visible';$('#add-float').style.display=['recipes','food','drink','dessert'].includes(tab)?'block':'none';$('#bottom-tabs').querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b.dataset.tab===tab);b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false')})}
 function listForTab(){const items=recipes.filter(r=>tab==='recipes'||r.category===tab).filter(r=>filter!=='fav'||r.favorite).filter(r=>filter!=='easy'||/easy/i.test(r.difficulty||'')).filter(r=>filter!=='project'||!(/easy/i.test(r.difficulty||''))).filter(r=>{const q=search.toLowerCase().trim();return !q||String(r.title||'').toLowerCase().includes(q)||(r.ingredients||[]).join(' ').toLowerCase().includes(q)});return items.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}
 function recipeCard(r){return `<article class="recipe-card"><div class="thumb-wrap"><button class="card-open" data-action="open-recipe" data-id="${esc(r.id)}" aria-label="Open ${esc(r.title)}"><img class="thumb" src="${dsrc(r.photo)||'../reference-recipes.png'}" alt="${esc(r.title)}" onerror="this.src='../reference-recipes.png'"></button><button class="fav ${r.favorite?'on':''}" data-action="favorite" data-id="${esc(r.id)}" aria-label="Toggle favorite">${r.favorite?'♥':'♡'}</button></div><div class="card-inner"><div class="card-cat">${esc(label(r.category).toUpperCase())}</div><button class="card-open" data-action="open-recipe" data-id="${esc(r.id)}"><h2 class="card-title">${esc(r.title)}</h2></button><div class="card-meta"><span>◷ ${Number(r.minutes)||0} min</span><span>♧ ${Number(r.servings)||1} servings</span></div></div></article>`}
 function renderCards(){const el=$('#cards');if(!el)return;const items=listForTab();el.innerHTML=items.length?items.map(recipeCard).join(''):`<div class="panel empty" style="grid-column:1/-1"><span class="empty-symbol">♡</span><h2>No matching recipes</h2><p>Tap + to add your first recipe.</p></div>`;const count=$('#match-count');if(count)count.textContent=String(items.length)}
@@ -128,7 +184,7 @@ function renderGrocery(){
 }
 function renderSettings(){return `<div class="hero"><div class="label">✦ PREFERENCES ✦</div><h1>Settings</h1></div><div class="hero-gap" style="height:25px"></div><div class="panel settings-card"><h2>☁ Shared cloud</h2><p id="cloud-state">${esc(cloudStatus)}</p>${cloudUser?`<p>Signed in as ${esc(cloudUser.email||'your account')}</p><button class="primary" data-action="cloud-sync">Sync now</button><button class="secondary" data-action="cloud-signout">Sign out</button>`:`<form id="cloud-login"><input type="email" name="email" autocomplete="email" placeholder="Existing app email" required><input type="password" name="password" autocomplete="current-password" placeholder="Password" required><button class="primary" type="submit">Sign in to shared cloud</button></form>`}<p>Sign in with the same existing account on both phones. Changes sync automatically when online; offline edits are saved until they can sync.</p></div><div class="panel settings-card"><div class="toggle"><div><h2>♫ Sounds</h2><p>Cute tap sounds</p></div><input id="sounds" type="checkbox" ${prefs.sounds?'checked':''} aria-label="Toggle sounds"></div></div><div class="panel settings-card"><h2>↥ Backups</h2><p>Save or restore your recipes, groceries, and photos as a JSON file.</p><button class="primary" data-action="export">Export backup</button><button class="secondary" data-action="import">Import backup</button></div><div class="panel settings-card"><h2>Recipe book</h2><p>${recipes.length} recipes saved · ${groceries.length} grocery items</p><button class="secondary" data-action="tab" data-tab="recipes">View recipes</button></div>`}
 function render(keepScroll=false){const y=content.scrollTop;setScene();content.innerHTML=tab==='grocery'?renderGrocery():tab==='settings'?renderSettings():renderRecipes();if(keepScroll)content.scrollTop=y;else content.scrollTop=0}
-function activate(t){tab=SCENES[t]?t:'recipes';filter='all';search='';grocerySearch='';closeOverlay();render()}
+function activate(t){const next=SCENES[t]?t:'recipes',changed=next!==tab;tab=next;filter='all';search='';grocerySearch='';closeOverlay();render();if(changed){content.classList.remove('tab-reveal');void content.offsetWidth;content.classList.add('tab-reveal')}}
 function showOverlay(html){overlay.innerHTML=`<div class="sheet">${html}</div>`;overlay.hidden=false;$('#add-float').hidden=true}
 function closeOverlay(){overlay.hidden=true;overlay.innerHTML='';editDraft=null;$('#add-float').hidden=false}
 function sheetHead(title){return `<div class="sheet-head"><h2>${esc(title)}</h2><button class="close" data-action="close" aria-label="Close">×</button></div>`}
@@ -337,6 +393,6 @@ window.addEventListener('focus',()=>{ensureCloudLibrary();refreshGroceryDay();sc
 window.addEventListener('pageshow',()=>{refreshGroceryDay();scheduleGroceryReset()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){ensureCloudLibrary();refreshGroceryDay();scheduleGroceryReset();requestSync()}});
 setInterval(()=>{if(cloudUser)requestSync()},30000);
-async function init(){try{db=await openDB();await seedOnce();const meta=await getAll('meta');const settings=meta.find(x=>x.key==='sounds');if(settings)prefs.sounds=settings.value!==false;[recipes,groceries]=await Promise.all([getAll('recipes'),getAll('groceries')]);render();lastGroceryCycle=groceryDayStart();scheduleGroceryReset();ensureCloudLibrary()}catch(err){console.error(err);content.innerHTML='<div class="panel">Could not open saved recipes. Please use a regular browser window.</div>'}}
+async function init(){try{db=await openDB();await seedOnce();const meta=await getAll('meta');const settings=meta.find(x=>x.key==='sounds');if(settings)prefs.sounds=settings.value!==false;[recipes,groceries]=await Promise.all([getAll('recipes'),getAll('groceries')]);render();lastGroceryCycle=groceryDayStart();scheduleGroceryReset();prefetchScenes();ensureCloudLibrary()}catch(err){console.error(err);content.innerHTML='<div class="panel">Could not open saved recipes. Please use a regular browser window.</div>'}}
 init();
 })();
