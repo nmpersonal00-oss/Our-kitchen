@@ -239,6 +239,156 @@ function closeOverlay(){
  editDraft=null;$('#add-float').hidden=false;
 }
 function sheetHead(title){return `<div class="sheet-head"><h2 id="popup-sheet-heading">${esc(title)}</h2><button class="close" data-action="close" aria-label="Close">×</button></div>`}
+
+/* A temporary image viewer inside the existing recipe dialog. The underlying
+   recipe, scroll position, image data, and editing state stay untouched. */
+const stepZoom={
+ scale:1,x:0,y:0,pointers:new Map(),gesture:null,lastTap:null,returnFocus:null
+};
+function clampStepZoom(v,min,max){return Math.max(min,Math.min(max,v))}
+function applyStepZoom(){
+ const viewer=overlay.querySelector('.step-lightbox');
+ if(!viewer)return;
+ const stage=viewer.querySelector('.step-lightbox-stage');
+ const img=viewer.querySelector('.step-lightbox-image');
+ if(!stage||!img)return;
+ const maxX=Math.max(0,(img.offsetWidth*stepZoom.scale-stage.clientWidth)/2);
+ const maxY=Math.max(0,(img.offsetHeight*stepZoom.scale-stage.clientHeight)/2);
+ stepZoom.x=clampStepZoom(stepZoom.x,-maxX,maxX);
+ stepZoom.y=clampStepZoom(stepZoom.y,-maxY,maxY);
+ img.style.transform='translate3d('+stepZoom.x+'px,'+stepZoom.y+'px,0) scale('+stepZoom.scale+')';
+ const value=viewer.querySelector('.step-lightbox-level');
+ if(value)value.textContent=Math.round(stepZoom.scale*100)+'%';
+}
+function setStepZoom(next,clientX,clientY){
+ const stage=overlay.querySelector('.step-lightbox-stage');
+ if(!stage)return;
+ const rect=stage.getBoundingClientRect();
+ const cx=Number.isFinite(clientX)?clientX:rect.left+rect.width/2;
+ const cy=Number.isFinite(clientY)?clientY:rect.top+rect.height/2;
+ const old=stepZoom.scale;
+ stepZoom.scale=clampStepZoom(next,1,5);
+ const ratio=stepZoom.scale/old;
+ stepZoom.x-=((cx-rect.left-rect.width/2)-stepZoom.x)*(ratio-1);
+ stepZoom.y-=((cy-rect.top-rect.height/2)-stepZoom.y)*(ratio-1);
+ if(stepZoom.scale===1){stepZoom.x=0;stepZoom.y=0}
+ applyStepZoom();
+}
+function resetStepZoom(){setStepZoom(1)}
+function closeStepPhoto(){
+ const viewer=overlay.querySelector('.step-lightbox');
+ if(!viewer)return;
+ viewer.remove();
+ const sheet=overlay.querySelector('.sheet');
+ if(sheet){sheet.removeAttribute('aria-hidden');sheet.inert=false}
+ stepZoom.pointers.clear();stepZoom.gesture=null;stepZoom.scale=1;
+ stepZoom.x=0;stepZoom.y=0;
+ if(stepZoom.returnFocus?.isConnected)stepZoom.returnFocus.focus({preventScroll:true});
+ stepZoom.returnFocus=null;
+}
+function beginStepZoomGesture(){
+ const pts=[...stepZoom.pointers.values()];
+ if(pts.length>=2){
+  const a=pts[0],b=pts[1];
+  stepZoom.gesture={
+   mode:'pinch',distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),
+   midX:(a.x+b.x)/2,midY:(a.y+b.y)/2,
+   scale:stepZoom.scale,x:stepZoom.x,y:stepZoom.y
+  };
+ }else if(pts.length===1){
+  stepZoom.gesture={mode:'pan',startX:pts[0].x,startY:pts[0].y,
+    x:stepZoom.x,y:stepZoom.y};
+ }else stepZoom.gesture=null;
+}
+function openStepPhoto(id,index){
+ const r=recipes.find(item=>item.id===id);
+ const photo=r?.steps?.[index]?.photo;
+ const source=SRC(photo);
+ if(!source){showToast('This step photo is not available yet');return}
+ closeStepPhoto();
+ const viewer=document.createElement('div');
+ viewer.className='step-lightbox';
+ viewer.setAttribute('role','dialog');
+ viewer.setAttribute('aria-modal','true');
+ viewer.setAttribute('aria-label','Zoomable photo for step '+(index+1));
+ viewer.innerHTML=
+  '<div class="step-lightbox-bar">'+
+   '<strong>Step '+(index+1)+' photo</strong>'+
+   '<button type="button" class="step-lightbox-close" data-action="close-step-photo" aria-label="Close photo viewer">×</button>'+
+  '</div>'+
+  '<div class="step-lightbox-stage" aria-label="Pinch to zoom or drag the image">'+
+   '<img class="step-lightbox-image" alt="Zoomable photo for step '+(index+1)+'" draggable="false">'+
+  '</div>'+
+  '<div class="step-lightbox-controls">'+
+   '<button type="button" data-action="step-photo-zoom-out" aria-label="Zoom out">−</button>'+
+   '<span class="step-lightbox-level" aria-live="off">100%</span>'+
+   '<button type="button" data-action="step-photo-zoom-in" aria-label="Zoom in">+</button>'+
+   '<button type="button" data-action="step-photo-reset" aria-label="Reset zoom">Reset</button>'+
+  '</div>'+
+  '<p class="step-lightbox-tip">Pinch to zoom · Drag to move · Double-tap to magnify</p>';
+ viewer.querySelector('.step-lightbox-image').src=source;
+ const stage=viewer.querySelector('.step-lightbox-stage');
+ stage.addEventListener('pointerdown',event=>{
+  if(event.pointerType==='mouse'&&event.button!==0)return;
+  event.preventDefault();
+  try{stage.setPointerCapture(event.pointerId)}catch(_){}
+  stepZoom.pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  beginStepZoomGesture();
+ });
+ stage.addEventListener('pointermove',event=>{
+  if(!stepZoom.pointers.has(event.pointerId))return;
+  event.preventDefault();
+  stepZoom.pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  const g=stepZoom.gesture;
+  if(!g)return;
+  const pts=[...stepZoom.pointers.values()];
+  if(pts.length>=2&&g.mode==='pinch'){
+   const a=pts[0],b=pts[1],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+   const distance=Math.max(1,Math.hypot(a.x-b.x,a.y-b.y));
+   stepZoom.scale=clampStepZoom(g.scale*distance/g.distance,1,5);
+   const ratio=stepZoom.scale/g.scale,rect=stage.getBoundingClientRect();
+   stepZoom.x=g.x+(mx-g.midX)-(ratio-1)*(g.midX-rect.left-rect.width/2-g.x);
+   stepZoom.y=g.y+(my-g.midY)-(ratio-1)*(g.midY-rect.top-rect.height/2-g.y);
+  }else if(pts.length===1&&g.mode==='pan'){
+   stepZoom.x=g.x+pts[0].x-g.startX;
+   stepZoom.y=g.y+pts[0].y-g.startY;
+  }
+  applyStepZoom();
+ });
+ const finishPointer=event=>{
+  if(!stepZoom.pointers.has(event.pointerId))return;
+  const point=stepZoom.pointers.get(event.pointerId);
+  const gesture=stepZoom.gesture;
+  const isTap=event.type==='pointerup'&&stepZoom.pointers.size===1&&
+    gesture?.mode==='pan'&&Math.hypot(point.x-gesture.startX,point.y-gesture.startY)<12;
+  stepZoom.pointers.delete(event.pointerId);
+  beginStepZoomGesture();
+  if(isTap){
+   const last=stepZoom.lastTap;
+   if(last&&Date.now()-last.time<330&&Math.hypot(point.x-last.x,point.y-last.y)<32){
+    setStepZoom(stepZoom.scale>1?1:2.5,point.x,point.y);
+    stepZoom.lastTap=null;
+   }else stepZoom.lastTap={time:Date.now(),x:point.x,y:point.y};
+  }else stepZoom.lastTap=null;
+ };
+ stage.addEventListener('pointerup',finishPointer);
+ stage.addEventListener('pointercancel',finishPointer);
+ stage.addEventListener('lostpointercapture',event=>{
+  if(stepZoom.pointers.has(event.pointerId)){
+   stepZoom.pointers.delete(event.pointerId);beginStepZoomGesture();
+  }
+ });
+ overlay.appendChild(viewer);
+ const sheet=overlay.querySelector('.sheet');
+ if(sheet){sheet.setAttribute('aria-hidden','true');sheet.inert=true}
+ stepZoom.scale=1;stepZoom.x=0;stepZoom.y=0;
+ stepZoom.pointers.clear();stepZoom.gesture=null;stepZoom.lastTap=null;
+ stepZoom.returnFocus=overlay.querySelector('[data-action="zoom-step-photo"][data-id="'+CSS.escape(id)+'"][data-index="'+index+'"]');
+ viewer.querySelector('.step-lightbox-close').focus({preventScroll:true});
+ viewer.querySelector('.step-lightbox-image').addEventListener('load',applyStepZoom);
+ applyStepZoom();
+}
+
 function openRecipe(id){const r=recipes.find(x=>x.id===id);if(!r)return;selected=id;showOverlay(`${sheetHead(r.title)}${recipeCover(r)?`<img class="detail-photo" ${recipeImage(r)} alt="Photo of ${esc(r.title)}">`:'<div class="recipe-detail-no-photo">♡<small>No photo added yet</small></div>'}<p>${esc(label(r.category))} · ${Number(r.minutes)||0} min · ${Number(r.servings)||1} servings</p><p>${esc(r.description||'')}</p><div class="actions"><button class="primary" data-action="edit-recipe" data-id="${esc(id)}">✎ Edit recipe</button><button class="secondary" data-action="recipe-to-grocery" data-id="${esc(id)}">+ Shopping list</button></div><h2>Ingredients</h2><ul class="detail-list">${(r.ingredients||[]).map(x=>`<li>${esc(typeof x==='string'?x:x.name||'')}</li>`).join('')}</ul><h2>Steps</h2>${(r.steps||[]).map((st,i)=>`<section class="detail-step"><h3>Step ${i+1}</h3><p>${esc(st.text||'')}</p>${st.photo?`<button type="button" class="step-photo-button" data-action="zoom-step-photo" data-id="${esc(r.id)}" data-index="${i}" aria-label="Open zoomable image for step ${i+1}"><img src="${dsrc(st.photo)}" alt="Photo for step ${i+1}" loading="lazy"><span class="step-photo-zoom-hint">Tap to zoom</span></button>`:''}</section>`).join('')}<p>${esc(r.notes||'')}</p><div class="actions"><button class="secondary" data-action="delete-recipe" data-id="${esc(id)}">Delete recipe</button></div>`,'recipe-detail')}
 function newDraft(category){return {id:uid(),title:'',category:category||'food',description:'',difficulty:'Easy',minutes:30,servings:2,photo:'',favorite:false,ingredients:[],steps:[{id:uid(),text:'',note:'',photo:''}],createdAt:now()}}
 function formField(name,title,value='',type='text'){return `<div class="field"><label for="f-${name}">${esc(title)}</label><input id="f-${name}" name="${name}" type="${type}" value="${esc(value)}"></div>`}
@@ -474,10 +624,17 @@ overlay.addEventListener('click',e=>{
  if(e.target===overlay&&(overlay.classList.contains('grocery-detail-overlay')||overlay.classList.contains('recipe-detail-overlay')))closeOverlay();
 });
 document.addEventListener('keydown',e=>{
+ if(overlay.querySelector('.step-lightbox')){
+  if(e.key==='Escape'){e.preventDefault();closeStepPhoto()}
+  else if(e.key==='+'||e.key==='='){e.preventDefault();setStepZoom(stepZoom.scale+.5)}
+  else if(e.key==='-'){e.preventDefault();setStepZoom(stepZoom.scale-.5)}
+  else if(e.key==='0'){e.preventDefault();resetStepZoom()}
+  return;
+ }
  if(e.key==='Escape'&&!overlay.hidden&&(overlay.classList.contains('grocery-detail-overlay')||overlay.classList.contains('recipe-detail-overlay')))closeOverlay();
 });
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const act=b.dataset.action,id=b.dataset.id; if(act!=='check-grocery')playSound();try{
- switch(act){case'tab':activate(b.dataset.tab);break;case'close':closeOverlay();break;case'close-settings':activate('grocery');break;case'new-recipe':editRecipe();break;case'open-recipe':openRecipe(id);break;case'edit-recipe':editRecipe(id);break;case'favorite':{const r=recipes.find(x=>x.id===id);if(r)await save('recipes',{...r,favorite:!r.favorite});break}case'filter':filter=b.dataset.filter;render(true);break;
+ switch(act){case'zoom-step-photo':openStepPhoto(id,Number(b.dataset.index));break;case'close-step-photo':closeStepPhoto();break;case'step-photo-zoom-in':setStepZoom(stepZoom.scale+.5);break;case'step-photo-zoom-out':setStepZoom(stepZoom.scale-.5);break;case'step-photo-reset':resetStepZoom();break;case'tab':activate(b.dataset.tab);break;case'close':closeOverlay();break;case'close-settings':activate('grocery');break;case'new-recipe':editRecipe();break;case'open-recipe':openRecipe(id);break;case'edit-recipe':editRecipe(id);break;case'favorite':{const r=recipes.find(x=>x.id===id);if(r)await save('recipes',{...r,favorite:!r.favorite});break}case'filter':filter=b.dataset.filter;render(true);break;
  case'open-grocery':openGrocery(id);break;case'edit-grocery':editGrocery(id);break;case'remove-grocery-photo':groceryPhotoRevision++;groceryPhotoDraft='';groceryPhotoPending=null;groceryPhotoPreview();break;case'add-grocery-detail':editGrocery(null);break;case'delete-grocery':if(confirm('Delete this grocery item?'))await destroy('groceries',id);break;case'uncheck-purchased':{const bought=groceries.filter(isGroceryChecked);for(const g of bought)await changeLocal('groceries',g.id,{...g,checked:false,checkedAt:null,updatedAt:now()});if(bought.length){await reload();requestSync()}break;}
  case'add-step':readEditor();editDraft.steps.push({id:uid(),text:'',note:'',photo:''});renderEditor();break;case'remove-step':readEditor();editDraft.steps.splice(Number(b.dataset.index),1);if(!editDraft.steps.length)editDraft.steps.push({id:uid(),text:'',note:'',photo:''});renderEditor();break;
  case'delete-recipe':if(confirm('Delete this recipe?')){await destroy('recipes',id);closeOverlay()}break;case'recipe-to-grocery':await addIngredients(id);break;
