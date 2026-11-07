@@ -1,10 +1,10 @@
 /* Offline shell for The Little Kitchen. IndexedDB groceries and outbox remain untouched. */
-const CACHE = 'little-kitchen-v26-inline-quantity';
+const CACHE = 'little-kitchen-v27-georgia-inline';
 const CORE = [
   './index.html',
   './v2/index.html',
-  './v2/kitchen.css?v=2.5-inline-quantity',
-  './v2/kitchen.js?v=2.7-inline-quantity'
+  './v2/kitchen.css?v=2.6-georgia-inline',
+  './v2/kitchen.js?v=2.8-georgia-inline'
 ];
 const EXTRAS = [
   './manifest.webmanifest?v=20261103-bunny-cooking',
@@ -47,7 +47,23 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     const shell = url.pathname.includes('/v2/') ? './v2/index.html' : './index.html';
-    event.respondWith(caches.match(shell).then(cached => cached || fetch(request)));
+    // Prefer fresh HTML when connected: an installed app must not stay pinned
+    // to a previous UI release just because an earlier shell is cached.
+    // Bound network lookup for no-signal supermarkets and fall back offline.
+    event.respondWith((async () => {
+      const abort = new AbortController();
+      const deadline = setTimeout(() => abort.abort(), 1200);
+      try {
+        const response = await fetch(request, {signal:abort.signal, cache:'no-store'});
+        if (response.ok) {
+          const copy = response.clone();
+          event.waitUntil(caches.open(CACHE).then(cache => cache.put(shell, copy)).catch(() => {}));
+          return response;
+        }
+      } catch (_) { /* No network: display the installed app immediately. */ }
+      finally { clearTimeout(deadline); }
+      return await caches.match(shell) || Response.error();
+    })());
     return;
   }
 
