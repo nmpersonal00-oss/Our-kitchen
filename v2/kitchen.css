@@ -695,24 +695,6 @@ html,body,.app,.app *{touch-action:manipulation}
  margin:0;
  border-radius:11px;
 }
-.overlay.card-popup-overlay .recipe-detail-sheet .detail-step .step-photo-button::after{
- content:'+';
- position:absolute;
- right:10px;
- bottom:10px;
- display:grid;
- place-items:center;
- width:33px;
- height:33px;
- border:1.5px solid #ffe0bb;
- border-radius:11px;
- background:rgba(70,37,27,.9);
- color:#fff2dd;
- font-family:Georgia,serif;
- font-size:25px;
- line-height:1;
- pointer-events:none;
-}
 .overlay.card-popup-overlay .recipe-detail-sheet .detail-step .step-photo-button:focus-visible{
  outline:3px solid #fff3de;
  outline-offset:4px;
