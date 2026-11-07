@@ -469,3 +469,103 @@ html,body,.app,.app *{touch-action:manipulation}
   animation:none!important;
  }
 }
+
+
+/* Recipe image frames: preserve the natural proportions of every upload.
+   In the former auto-height button, 100% image height was unresolved and the
+   tall source image overflowed its clipped frame on small iPhones. */
+.recipe-card .thumb-wrap{
+ width:100%;
+ height:auto;
+ aspect-ratio:4/3;
+ position:relative;
+ isolation:isolate;
+ overflow:hidden;
+ background:linear-gradient(145deg,#8e5e48,#533126);
+}
+.recipe-card .thumb-wrap > .card-open{
+ position:absolute;
+ inset:0;
+ display:block;
+ width:100%;
+ height:100%;
+ padding:6px;
+ border:0;
+ border-radius:0;
+ overflow:hidden;
+}
+.recipe-card .thumb-wrap .thumb{
+ display:block;
+ width:100%;
+ height:100%;
+ max-width:100%;
+ max-height:100%;
+ object-fit:contain;
+ object-position:center;
+ border-radius:11px;
+}
+.recipe-card .thumb-wrap .fav{
+ z-index:2;
+}
+.recipe-card .thumb-wrap .recipe-image-unavailable{
+ visibility:hidden;
+}
+.recipe-card .thumb-wrap:has(.recipe-image-unavailable)::after{
+ content:'♡';
+ position:absolute;
+ top:50%;left:50%;
+ transform:translate(-50%,-50%);
+ color:#ffe7c8;
+ font-size:46px;
+ pointer-events:none;
+}
+.overlay.card-popup-overlay .recipe-detail-sheet .detail-photo{
+ height:auto;
+ max-width:100%;
+ object-fit:contain;
+ object-position:center;
+}
+.overlay.card-popup-overlay .recipe-detail-sheet .detail-photo.recipe-image-unavailable{
+ display:none;
+}
+.overlay.card-popup-overlay .recipe-detail-sheet .detail-step img{
+ height:auto;
+ object-fit:contain;
+ object-position:center;
+}
+.overlay.card-popup-overlay .editor-sheet .step-editor img,
+.overlay.card-popup-overlay .editor-sheet .image-preview{
+ height:auto;
+ max-width:100%;
+ object-fit:contain;
+ object-position:center;
+}
+
+
+.recipe-card .thumb-wrap .recipe-no-photo{
+ display:flex;
+ height:100%;width:100%;
+ align-items:center;justify-content:center;
+ color:#ffe4bd;
+ font-size:46px;
+ font-family:Georgia,serif;
+}
+.overlay.card-popup-overlay .recipe-detail-sheet .recipe-detail-no-photo{
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
+ min-height:145px;
+ margin:0 0 16px;
+ border:1px dashed rgba(255,222,185,.65);
+ border-radius:18px;
+ background:rgba(68,35,25,.56);
+ color:#ffe6cc;
+ font-family:Georgia,serif;
+ font-size:42px;
+}
+.overlay.card-popup-overlay .recipe-detail-sheet .recipe-detail-no-photo small{
+ margin:6px 0;
+ font-family:'Trebuchet MS',system-ui,sans-serif;
+ font-size:15px;
+}
