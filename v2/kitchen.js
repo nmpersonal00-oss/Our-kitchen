@@ -383,7 +383,7 @@ function openStepPhoto(id,index){
  if(sheet){sheet.setAttribute('aria-hidden','true');sheet.inert=true}
  stepZoom.scale=1;stepZoom.x=0;stepZoom.y=0;
  stepZoom.pointers.clear();stepZoom.gesture=null;stepZoom.lastTap=null;
- stepZoom.returnFocus=overlay.querySelector('[data-action="zoom-step-photo"][data-id="'+CSS.escape(id)+'"][data-index="'+index+'"]');
+ stepZoom.returnFocus=[...overlay.querySelectorAll('[data-action="zoom-step-photo"]')].find(btn=>btn.dataset.id===id&&Number(btn.dataset.index)===index)||null;
  viewer.querySelector('.step-lightbox-close').focus({preventScroll:true});
  viewer.querySelector('.step-lightbox-image').addEventListener('load',applyStepZoom);
  applyStepZoom();
