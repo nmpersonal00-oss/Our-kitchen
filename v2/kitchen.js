@@ -269,6 +269,9 @@ async function cloudExpand(kind,v){
  if(kind==='recipe'){
   x.photo=await cloudImageIn(x.photo);
   for(const step of x.steps||[])step.photo=await cloudImageIn(step.photo);
+ }else if(kind==='grocery'){
+  // Hydrate once while online; IndexedDB holds actual photo bytes for offline use.
+  x.photo=await cloudImageIn(x.photo);
  }
  return x;
 }
@@ -277,6 +280,9 @@ async function cloudPrepare(kind,r){
  if(kind==='recipe'){
   x.photo=await cloudImageOut(x.photo,r.id,'cover');
   for(const st of x.steps||[])st.photo=await cloudImageOut(st.photo,r.id,st.id||'step');
+ }else if(kind==='grocery'){
+  // Upload using the existing private bucket. Never put large data URIs in JSON.
+  x.photo=await cloudImageOut(x.photo,r.id,'product');
  }
  return x;
 }
