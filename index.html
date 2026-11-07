@@ -19,15 +19,19 @@ try{
  }
 }catch(_){}
 </script>
- <link rel="stylesheet" href="./kitchen.css?v=2.5-inline-quantity">
+ <link rel="stylesheet" href="./kitchen.css?v=2.6-georgia-inline">
  <link rel="manifest" href="../manifest.webmanifest?v=20261103-bunny-cooking">
- <script defer src="./kitchen.js?v=2.7-inline-quantity"></script>
+ <script defer src="./kitchen.js?v=2.8-georgia-inline"></script>
  <link rel="apple-touch-icon" sizes="180x180" href="../little-kitchen-cooking-apple-touch.png">
  <link rel="icon" href="../little-kitchen-cooking-favicon.ico" sizes="any">
  <script>
  // Keep the existing installed Home Screen app at the original URL and scope.
  if ('serviceWorker' in navigator && location.protocol === 'https:') {
-   window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js', {scope:'../'}).catch(console.warn));
+   window.addEventListener('load', () => {
+     navigator.serviceWorker.register('../sw.js', {scope:'../'})
+      .then(reg => { if (navigator.onLine) reg.update().catch(console.warn); })
+      .catch(console.warn);
+   });
  }
  </script>
 </head>
