@@ -103,7 +103,7 @@ html,body,.app,.app *{touch-action:manipulation}
    Only the grocery list is affected; recipe tiles and backgrounds are untouched. */
 #grocery-items{padding:12px 15px}
 #grocery-items .grocery-row{
- min-height:78px;
+ min-height:72px;
  padding:8px 0;
  gap:9px;
  align-items:center;
@@ -120,20 +120,29 @@ html,body,.app,.app *{touch-action:manipulation}
 #grocery-items .grocery-open{
  flex:1 1 0;min-width:0;min-height:52px;
  padding:5px 0;
- font-family:'Trebuchet MS',system-ui,-apple-system,sans-serif;
- font-size:clamp(23px,5.9vw,28px);
- font-weight:800;line-height:1.15;letter-spacing:-.3px;
- color:#fff5e8;overflow-wrap:anywhere;
+ font-family:Georgia,serif;
+ font-size:clamp(23px,5.9vw,26px);
+ font-weight:700;line-height:1.15;letter-spacing:-.3px;
+ color:#fff5e8;overflow-wrap:normal;
+}
+#grocery-items .grocery-main{
+ display:flex;width:100%;min-width:0;
+ align-items:baseline;gap:7px;
+ flex-wrap:nowrap;white-space:nowrap;overflow:hidden;
 }
 #grocery-items .grocery-title{
- font-size:inherit;font-weight:inherit;
+ display:block;flex:0 1 auto;min-width:0;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ font-family:Georgia,serif;
+ font-size:inherit;font-weight:700;
 }
 #grocery-items .grocery-qty-inline{
- display:inline-block;white-space:nowrap;
- margin-left:8px;
+ display:block;flex:0 0 auto;max-width:46%;
+ overflow:hidden;text-overflow:ellipsis;
+ margin-left:0;white-space:nowrap;
+ font-family:Georgia,serif;
  font-size:clamp(14px,3.6vw,16px);
  font-weight:600;line-height:1.2;letter-spacing:0;color:#ffdec4;
- vertical-align:baseline;
 }
 #grocery-items .grocery-notes{
  display:block;margin-top:5px;
