@@ -51,12 +51,19 @@ html.lk-installed-phone .app{
 .grocery-hero .grocery-bunny{object-fit:contain;object-position:center bottom;filter:drop-shadow(0 0 6px #ffc47688)}
 
 
-/* Fast, smooth transitions between the same original illustrated backgrounds. */
-.scene-fade{
+/* Decoded, full-screen artwork layers crossfade without repainting the base. */
+.scene-deck{background-image:none}
+.scene-deck .scene-image{
+ position:absolute;
+ inset:0;
+ display:block;
+ width:100%;
+ height:100%;
+ object-fit:fill;
  opacity:0;
  transition:opacity .24s cubic-bezier(.22,1,.36,1);
- will-change:opacity;
 }
+.scene-deck .scene-image.is-visible{opacity:1}
 @keyframes lk-tab-arrive{
  from{opacity:.88;transform:translateY(5px)}
  to{opacity:1;transform:translateY(0)}
@@ -69,7 +76,7 @@ html,body,.app,.app *{touch-action:manipulation}
 .app input:not([type="checkbox"]),.app textarea,.app select{font-size:16px}
 
 @media(prefers-reduced-motion:reduce){
- .scene-fade{transition:none;will-change:auto}
+ .scene-deck .scene-image{transition:none}
  .content.tab-reveal{animation:none}
 }
 

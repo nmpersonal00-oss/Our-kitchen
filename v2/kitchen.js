@@ -21,11 +21,12 @@ window.addEventListener('pageshow',resizeInstalledPhone);
 
 const $=s=>document.querySelector(s), content=$('#content'), overlay=$('#overlay'), scene=$('#scene');
 const SCENES={grocery:'../reference-grocery.png',recipes:'../reference-recipes.png',food:'../reference-food.png',drink:'../reference-drink.png',dessert:'../reference-dessert.png',settings:'../reference-settings.png'};
-// Keep the existing artwork visible while the next large background loads and
-// decodes. Crossfade the predecoded image instead of showing an empty scene.
-const sceneFade=document.createElement('div');
-sceneFade.className='scene scene-fade';
-scene.after(sceneFade);
+// Keep a decoded image layer for each original background. The existing
+// grocery scene remains visible until the selected layer is ready to fade in.
+// Never replace a live CSS background while hiding the layer over it.
+const sceneDeck=document.createElement('div');
+sceneDeck.className='scene scene-deck';
+scene.after(sceneDeck);
 const sceneImages=new Map();
 let requestedScene=SCENES.grocery,sceneGeneration=0,sceneFinishTimer=0;
 function warmScene(path){
@@ -33,24 +34,25 @@ function warmScene(path){
  if(cached)return cached.loaded;
  const image=new Image();
  image.decoding='async';
+ image.className='scene-image';
+ image.alt='';
+ image.draggable=false;
  const loaded=new Promise(resolve=>{
   image.onload=()=>{
    if(typeof image.decode==='function')image.decode().then(()=>resolve(true),()=>resolve(true));
    else resolve(true);
   };
-  image.onerror=()=>{sceneImages.delete(path);resolve(false)};
-  image.src=path;
+  image.onerror=()=>{sceneImages.delete(path);image.remove();resolve(false)};
  });
- // Keep decoded backgrounds available for near-instant repeat tab switches.
  sceneImages.set(path,{image,loaded});
+ sceneDeck.appendChild(image);
+ image.src=path;
  return loaded;
 }
 function prefetchScenes(){
- // Start after first paint and load sequentially to avoid choking mobile networks.
- const paths=[SCENES.recipes,SCENES.food,SCENES.drink,SCENES.dessert,SCENES.settings];
- const warm=async()=>{for(const path of paths)await warmScene(path)};
- if('requestIdleCallback' in window)window.requestIdleCallback(warm,{timeout:1200});
- else setTimeout(warm,200);
+ // Start every background on the first frame, not sequentially during idle.
+ // Tabs remain responsive; an unfinished image never replaces the old one.
+ for(const path of Object.values(SCENES))warmScene(path);
 }
 function paintScene(path){
  if(path===requestedScene)return;
@@ -58,26 +60,38 @@ function paintScene(path){
  const generation=++sceneGeneration;
  warmScene(path).then(ready=>{
   if(!ready||generation!==sceneGeneration)return;
+  const next=sceneImages.get(path)?.image;
+  if(!next)return;
   clearTimeout(sceneFinishTimer);
-  // When switching rapidly, preserve the currently visible image as the base.
-  if(sceneFade.style.opacity==='1')scene.style.backgroundImage=sceneFade.style.backgroundImage;
-  sceneFade.style.transition='none';
-  sceneFade.style.opacity='0';
-  sceneFade.style.backgroundImage="url('"+path+"')";
-  // Wait until the new bitmap is in the layer before animating opacity.
+  const finish=()=>{
+   sceneFinishTimer=setTimeout(()=>{
+    // Once the fade finishes, keep only this fully visible image on top.
+    sceneDeck.appendChild(next);
+    for(const {image} of sceneImages.values()){
+     if(image!==next)image.classList.remove('is-visible');
+    }
+   },280);
+  };
+  if(next.classList.contains('is-visible')){
+   // A rapid switch back: fade away images above the previous selection,
+   // rather than moving its still-visible bitmap forward in a sudden jump.
+   const layers=Array.from(sceneDeck.children);
+   for(let i=layers.indexOf(next)+1;i<layers.length;i++){
+    layers[i].classList.remove('is-visible');
+   }
+   finish();
+   return;
+  }
+  // A new selection fades in on top; the previous scene stays fully painted.
+  sceneDeck.appendChild(next);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
    if(generation!==sceneGeneration)return;
-   sceneFade.style.transition='';
-   sceneFade.style.opacity='1';
-   sceneFinishTimer=setTimeout(()=>{
-    if(generation!==sceneGeneration)return;
-    scene.style.backgroundImage="url('"+path+"')";
-    sceneFade.style.transition='none';
-    sceneFade.style.opacity='0';
-   },280);
+   next.classList.add('is-visible');
+   finish();
   }));
  });
 }
+requestAnimationFrame(prefetchScenes);
 
 const CATS={food:'Food',drink:'Drinks',dessert:'Desserts'};
 const DB_NAME='little-kitchen-recipes-v1',DB_VERSION=3;
@@ -724,6 +738,6 @@ window.addEventListener('focus',()=>{ensureCloudLibrary();refreshGroceryDay();sc
 window.addEventListener('pageshow',()=>{refreshGroceryDay();scheduleGroceryReset()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){ensureCloudLibrary();refreshGroceryDay();scheduleGroceryReset();requestSync()}});
 setInterval(()=>{if(cloudUser)requestSync()},30000);
-async function init(){try{db=await openDB();await seedOnce();const meta=await getAll('meta');const settings=meta.find(x=>x.key==='sounds');if(settings)prefs.sounds=settings.value!==false;[recipes,groceries]=await Promise.all([getAll('recipes'),getAll('groceries')]);render();lastGroceryCycle=groceryDayStart();scheduleGroceryReset();prefetchScenes();ensureCloudLibrary()}catch(err){console.error(err);content.innerHTML='<div class="panel">Could not open saved recipes. Please use a regular browser window.</div>'}}
+async function init(){try{db=await openDB();await seedOnce();const meta=await getAll('meta');const settings=meta.find(x=>x.key==='sounds');if(settings)prefs.sounds=settings.value!==false;[recipes,groceries]=await Promise.all([getAll('recipes'),getAll('groceries')]);render();lastGroceryCycle=groceryDayStart();scheduleGroceryReset();ensureCloudLibrary()}catch(err){console.error(err);content.innerHTML='<div class="panel">Could not open saved recipes. Please use a regular browser window.</div>'}}
 init();
 })();
