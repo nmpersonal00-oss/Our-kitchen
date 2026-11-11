@@ -63,19 +63,27 @@ function paintScene(path){
   const next=sceneImages.get(path)?.image;
   if(!next)return;
   clearTimeout(sceneFinishTimer);
-  // Place the decoded image above the still-visible current scene.
-  sceneDeck.appendChild(next);
   const finish=()=>{
    sceneFinishTimer=setTimeout(()=>{
-    if(sceneDeck.lastElementChild!==next)return;
-    // Remove previous layers only after the new one is fully opaque.
+    // Once the fade finishes, keep only this fully visible image on top.
+    sceneDeck.appendChild(next);
     for(const {image} of sceneImages.values()){
      if(image!==next)image.classList.remove('is-visible');
     }
    },280);
   };
-  if(next.classList.contains('is-visible')){finish();return}
-  // Two frames ensure the incoming layer is painted before fading it in.
+  if(next.classList.contains('is-visible')){
+   // A rapid switch back: fade away images above the previous selection,
+   // rather than moving its still-visible bitmap forward in a sudden jump.
+   const layers=Array.from(sceneDeck.children);
+   for(let i=layers.indexOf(next)+1;i<layers.length;i++){
+    layers[i].classList.remove('is-visible');
+   }
+   finish();
+   return;
+  }
+  // A new selection fades in on top; the previous scene stays fully painted.
+  sceneDeck.appendChild(next);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
    if(generation!==sceneGeneration)return;
    next.classList.add('is-visible');
