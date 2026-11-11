@@ -1,5 +1,5 @@
 /* Offline shell for The Little Kitchen. IndexedDB groceries and outbox remain untouched. */
-const CACHE = 'little-kitchen-v34-daily-ready';
+const CACHE = 'little-kitchen-v35-recipe-cover-fill';
 const CORE = [
   './index.html',
   './v2/index.html',
