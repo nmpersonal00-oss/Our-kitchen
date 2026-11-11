@@ -94,9 +94,18 @@ function paintScene(path){
 requestAnimationFrame(prefetchScenes);
 
 const CATS={food:'Food',drink:'Drinks',dessert:'Desserts'};
+const GROCERY_CATEGORIES=[['meats','Meats'],['pantry','Pantry'],['fridge','Fridge'],['freezer','Freezer'],['sauces','Sauces'],['seasonings','Seasonings'],['vegetables','Vegetables']];
+const GROCERY_CATEGORY_ALIASES={meat:'meats',produce:'vegetables',vegetable:'vegetables',frozen:'freezer',dairy:'fridge',refrigerated:'fridge',spices:'seasonings',spice:'seasonings',condiments:'sauces',condiment:'sauces'};
+function groceryCategoryOf(g){
+ const raw=String(g?.category||'pantry').trim().toLowerCase();
+ return GROCERY_CATEGORIES.some(([key])=>key===raw)?raw:GROCERY_CATEGORY_ALIASES[raw]||'other';
+}
+function groceryCategoryLabel(g){
+ return GROCERY_CATEGORIES.find(([key])=>key===groceryCategoryOf(g))?.[1]||'Other';
+}
 const DB_NAME='little-kitchen-recipes-v1',DB_VERSION=3;
 const CLOUD_URL='https://pptbmupnpxigwfqkdpzt.supabase.co',CLOUD_KEY='sb_publishable_HBQoTJb2-tXAaOHifY9x4A_SXMDZLgr',BUCKET='lk-private-photos';
-let db=null, recipes=[],groceries=[],tab='grocery',filter='all',search='',grocerySearch='',selected=null,editDraft=null,cloud=null,cloudUser=null,cloudStatus='Not connected',syncing=false,cloudReady=false,syncTimer=null,syncAgain=false,cloudChannel=null,photoPending=null,prefs={sounds:true},toastTimer=null;
+let db=null, recipes=[],groceries=[],tab='grocery',filter='all',search='',grocerySearch='',groceryCategory='all',selected=null,editDraft=null,cloud=null,cloudUser=null,cloudStatus='Not connected',syncing=false,cloudReady=false,syncTimer=null,syncAgain=false,cloudChannel=null,photoPending=null,prefs={sounds:true},toastTimer=null;
 let groceryPhotoDraft='',groceryPhotoPending=null,groceryPhotoRevision=0;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>window.crypto?.randomUUID?.()||'lk-'+Date.now()+'-'+Math.random().toString(36).slice(2);
@@ -226,17 +235,36 @@ function renderRecipes(){const title=tab==='recipes'?'Recipe <em>book</em>':tab=
 function groceryCard(g){return `<div class="grocery-row ${isGroceryChecked(g)?'done':''}"><label class="grocery-check-hit" title="Mark ${esc(g.name)} as ${isGroceryChecked(g)?'needed':'purchased'}"><input type="checkbox" data-action="check-grocery" data-id="${esc(g.id)}" ${isGroceryChecked(g)?'checked':''} aria-label="Mark ${esc(g.name)} as ${isGroceryChecked(g)?'needed':'purchased'}"></label><button type="button" class="grocery-name grocery-open" data-action="open-grocery" data-id="${esc(g.id)}" aria-label="View ${esc(g.name)} details"><span class="grocery-main"><span class="grocery-title" title="${esc(g.name)}">${esc(g.name)}${g.priority?' ✦':''}</span><span class="grocery-qty-inline">${esc(g.qty??1)}${g.unit?' '+esc(g.unit):''}</span></span>${g.notes?`<span class="grocery-notes">${esc(g.notes)}</span>`:''}</button><div class="row-actions"><button class="text-button" data-action="edit-grocery" data-id="${esc(g.id)}" aria-label="Edit grocery">✎</button><button class="text-button" data-action="delete-grocery" data-id="${esc(g.id)}" aria-label="Delete grocery">×</button></div></div>`}
 function groceryRows(){
  const q=grocerySearch.trim().toLowerCase();
- const hits=groceries.filter(g=>!q||[g.name,g.notes,g.category,g.store,g.unit].some(v=>String(v||'').toLowerCase().includes(q)));
- if(!hits.length)return groceries.length?'<div class="empty"><h2>No matching items</h2><p>Try another search.</p></div>':'<div class="empty"><div class="empty-symbol">♙</div><h2>Your list is empty</h2><p>Tap Add item to start your shopping list.</p></div>';
+ const hits=groceries.filter(g=>(groceryCategory==='all'||groceryCategoryOf(g)===groceryCategory)&&
+  (!q||[g.name,g.notes,g.category,g.store,g.unit].some(v=>String(v||'').toLowerCase().includes(q))));
+ if(!hits.length){
+  if(!groceries.length)return '<div class="empty"><div class="empty-symbol">♙</div><h2>Your list is empty</h2><p>Tap Add item to start your shopping list.</p></div>';
+  if(q)return '<div class="empty"><h2>No matching items</h2><p>Try another search.</p></div>';
+  return '<div class="empty"><h2>No items in this category</h2><p>Tap Add item to add one here, or choose All to see everything.</p></div>';
+ }
  return hits.filter(g=>!isGroceryChecked(g)).map(groceryCard).join('')+hits.filter(isGroceryChecked).map(groceryCard).join('');
+}
+function selectGroceryCategory(category){
+ groceryCategory=category;
+ const tabs=$('#grocery-category-tabs');
+ if(tabs)tabs.querySelectorAll('button[data-grocery-category]').forEach(button=>{
+  const active=button.dataset.groceryCategory===category;
+  button.classList.toggle('active',active);
+  button.setAttribute('aria-pressed',String(active));
+ });
+ const list=$('#grocery-items');
+ if(list)list.innerHTML=groceryRows();
 }
 function renderGrocery(){
  const pending=groceries.filter(g=>!isGroceryChecked(g)),done=groceries.filter(isGroceryChecked);
- return `<div class="grocery-hero"><img class="grocery-bunny" src="./groceries-bunny.webp?v=2" alt="" aria-hidden="true" decoding="async"><div class="grocery-hero-copy"><div class="label">✦ MY SHOPPING LIST ✦</div><h1>Groceries</h1><p>${pending.length} to buy &nbsp;·&nbsp; ${done.length} checked off</p></div></div><div class="quick-add"><input id="grocery-search" type="search" autocomplete="off" aria-label="Search grocery items" placeholder="Search groceries…" value="${esc(grocerySearch)}" maxlength="140"><button class="primary" type="button" data-action="add-grocery-detail">＋ Add item</button></div><div class="panel" id="grocery-items">${groceryRows()}</div>${done.length?'<div class="actions"><button class="secondary" type="button" data-action="uncheck-purchased">Uncheck purchased</button></div>':''}`;
+ const categories=[['all','All'],...GROCERY_CATEGORIES];
+ if(groceries.some(g=>groceryCategoryOf(g)==='other'))categories.push(['other','Other']);
+ const categoryTabs=categories.map(([key,label])=>`<button class="grocery-category-tab ${groceryCategory===key?'active':''}" type="button" data-action="grocery-category" data-grocery-category="${key}" aria-pressed="${groceryCategory===key}">${label}</button>`).join('');
+ return `<div class="grocery-hero"><img class="grocery-bunny" src="./groceries-bunny.webp?v=2" alt="" aria-hidden="true" decoding="async"><div class="grocery-hero-copy"><div class="label">✦ MY SHOPPING LIST ✦</div><h1>Groceries</h1><p>${pending.length} to buy &nbsp;·&nbsp; ${done.length} checked off</p></div></div><div class="quick-add"><input id="grocery-search" type="search" autocomplete="off" aria-label="Search grocery items" placeholder="Search groceries…" value="${esc(grocerySearch)}" maxlength="140"><button class="primary" type="button" data-action="add-grocery-detail">＋ Add item</button></div><div class="grocery-category-tabs" id="grocery-category-tabs" role="group" aria-label="Filter groceries by category">${categoryTabs}</div><div class="panel" id="grocery-items">${groceryRows()}</div>${done.length?'<div class="actions"><button class="secondary" type="button" data-action="uncheck-purchased">Uncheck purchased</button></div>':''}`;
 }
 function renderSettings(){return `<div class="hero"><div class="label">✦ PREFERENCES ✦</div><h1>Settings</h1></div><div class="hero-gap" style="height:25px"></div><div class="panel settings-card"><h2>☁ Shared cloud</h2><p id="cloud-state">${esc(cloudStatus)}</p>${cloudUser?`<p>Signed in as ${esc(cloudUser.email||'your account')}</p><button class="primary" data-action="cloud-sync">Sync now</button><button class="secondary" data-action="cloud-signout">Sign out</button>`:`<form id="cloud-login"><input type="email" name="email" autocomplete="email" placeholder="Existing app email" required><input type="password" name="password" autocomplete="current-password" placeholder="Password" required><button class="primary" type="submit">Sign in to shared cloud</button></form>`}<p>Sign in with the same existing account on both phones. Changes sync automatically when online; offline edits are saved until they can sync.</p></div><div class="panel settings-card"><div class="toggle"><div><h2>♫ Sounds</h2><p>Cute tap sounds</p></div><input id="sounds" type="checkbox" ${prefs.sounds?'checked':''} aria-label="Toggle sounds"></div></div><div class="panel settings-card"><h2>↥ Backups</h2><p>Save or restore your recipes, groceries, and photos as a JSON file.</p><button class="primary" data-action="export">Export backup</button><button class="secondary" data-action="import">Import backup</button></div><div class="panel settings-card"><h2>Recipe book</h2><p>${recipes.length} recipes saved · ${groceries.length} grocery items</p><button class="secondary" data-action="tab" data-tab="recipes">View recipes</button></div>`}
 function render(keepScroll=false){const y=content.scrollTop;setScene();content.innerHTML=tab==='grocery'?renderGrocery():tab==='settings'?renderSettings():renderRecipes();if(keepScroll)content.scrollTop=y;else content.scrollTop=0}
-function activate(t){const next=SCENES[t]?t:'recipes',changed=next!==tab;tab=next;filter='all';search='';grocerySearch='';closeOverlay();render();if(changed){content.classList.remove('tab-reveal');void content.offsetWidth;content.classList.add('tab-reveal')}}
+function activate(t){const next=SCENES[t]?t:'recipes',changed=next!==tab;tab=next;filter='all';search='';grocerySearch='';groceryCategory='all';closeOverlay();render();if(changed){content.classList.remove('tab-reveal');void content.offsetWidth;content.classList.add('tab-reveal')}}
 function showOverlay(html,mode='editor'){
  const isGroceryDetail=mode==='grocery-detail',isRecipeDetail=mode==='recipe-detail';
  overlay.classList.add('card-popup-overlay');
@@ -446,6 +474,7 @@ function openGrocery(id){
   ${g.photo?`<img class="grocery-detail-photo" src="${dsrc(g.photo)}" alt="Product photo for ${esc(g.name)}">`:'<div class="grocery-detail-photo-empty"><span aria-hidden="true">♡</span><p>Add a photo of the exact product you want to buy</p></div>'}
  </div>
  <div class="grocery-detail-facts">
+   <div class="grocery-detail-fact"><span class="grocery-detail-fact-label">Category</span><strong class="grocery-detail-fact-value">${esc(groceryCategoryLabel(g))}</strong></div>
   <div class="grocery-detail-fact">
    <span class="grocery-detail-fact-label">Quantity</span>
    <strong class="grocery-detail-fact-value grocery-detail-qty-value">${esc(g.qty??1)}${g.unit?' '+esc(g.unit):''}</strong>
@@ -469,14 +498,19 @@ function groceryPhotoPreview(){
  if(remove)remove.hidden=!groceryPhotoDraft;
 }
 function editGrocery(id){
- const g=groceries.find(x=>x.id===id)||{id:uid(),name:'',qty:1,unit:'',notes:'',category:'pantry',priority:false,checked:false,photo:''};
+ const g=groceries.find(x=>x.id===id)||{id:uid(),name:'',qty:1,unit:'',notes:'',category:groceryCategory==='all'||groceryCategory==='other'?'pantry':groceryCategory,priority:false,checked:false,photo:''};
  selected=id||null;
  groceryPhotoRevision++;
  groceryPhotoDraft=g.photo||'';
  groceryPhotoPending=null;
+ const current=String(g.category||'pantry');
+ const known=GROCERY_CATEGORIES.some(([key])=>key===current);
+ const options=GROCERY_CATEGORIES.map(([key,label])=>`<option value="${key}" ${current===key?'selected':''}>${label}</option>`).join('')+
+  (known?'':`<option value="${esc(current)}" selected>Current: ${esc(current)}</option>`);
  showOverlay(`${sheetHead(id?'Edit item':'New item')}<form id="grocery-form">
  ${formField('name','Item name',g.name)}
  <div class="form-grid">${formField('qty','Quantity',g.qty,'number')}${formField('unit','Unit',g.unit)}</div>
+ <div class="field"><label for="grocery-category">Category</label><select id="grocery-category" name="category" required>${options}</select></div>
  ${formField('notes','Notes',g.notes)}
  <label><input type="checkbox" name="priority" ${g.priority?'checked':''}> Important item</label>
  <div class="field grocery-photo-field"><label for="grocery-photo">Product photo (optional)</label>
@@ -719,7 +753,7 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const act=b.dataset.action,id=b.dataset.id; if(act!=='check-grocery')playSound();try{
  switch(act){case'zoom-preparation-photo':openStepPhoto(id,Number(b.dataset.index),'preparation');break;case'zoom-step-photo':openStepPhoto(id,Number(b.dataset.index));break;case'close-step-photo':closeStepPhoto();break;case'step-photo-zoom-in':setStepZoom(stepZoom.scale+.5);break;case'step-photo-zoom-out':setStepZoom(stepZoom.scale-.5);break;case'step-photo-reset':resetStepZoom();break;case'tab':activate(b.dataset.tab);break;case'close':closeOverlay();break;case'close-settings':activate('grocery');break;case'new-recipe':editRecipe();break;case'open-recipe':openRecipe(id);break;case'edit-recipe':editRecipe(id);break;case'favorite':{const r=recipes.find(x=>x.id===id);if(r)await save('recipes',{...r,favorite:!r.favorite});break}case'filter':filter=b.dataset.filter;render(true);break;
- case'open-grocery':openGrocery(id);break;case'edit-grocery':editGrocery(id);break;case'remove-grocery-photo':groceryPhotoRevision++;groceryPhotoDraft='';groceryPhotoPending=null;groceryPhotoPreview();break;case'add-grocery-detail':editGrocery(null);break;case'delete-grocery':if(confirm('Delete this grocery item?'))await destroy('groceries',id);break;case'uncheck-purchased':{const bought=groceries.filter(isGroceryChecked);for(const g of bought)await changeLocal('groceries',g.id,{...g,checked:false,checkedAt:null,updatedAt:now()});if(bought.length){await reload();requestSync()}break;}
+ case'open-grocery':openGrocery(id);break;case'edit-grocery':editGrocery(id);break;case'remove-grocery-photo':groceryPhotoRevision++;groceryPhotoDraft='';groceryPhotoPending=null;groceryPhotoPreview();break;case'add-grocery-detail':editGrocery(null);break;case'grocery-category':selectGroceryCategory(b.dataset.groceryCategory);break;case'delete-grocery':if(confirm('Delete this grocery item?'))await destroy('groceries',id);break;case'uncheck-purchased':{const bought=groceries.filter(isGroceryChecked);for(const g of bought)await changeLocal('groceries',g.id,{...g,checked:false,checkedAt:null,updatedAt:now()});if(bought.length){await reload();requestSync()}break;}
  case'remove-recipe-cover':readEditor();editDraft.photo='';editDraft.photoCloud=null;renderEditor();break;
  case'remove-preparation-photo':readEditor();if(editDraft.ingredients[Number(b.dataset.index)]){editDraft.ingredients[Number(b.dataset.index)].photo='';editDraft.ingredients[Number(b.dataset.index)].photoCloud=null}renderEditor();break;
   case'add-preparation':readEditor();editDraft.ingredients.push(preparationItem(''));renderEditor();break;
@@ -772,7 +806,7 @@ document.addEventListener('change',async e=>{try{if(e.target.dataset.action==='c
  try{const photo=await photoPending;if(editDraft===draft&&draft.steps[index]){draft.steps[index].photo=photo;draft.steps[index].photoCloud=null;renderEditor()}}
  finally{photoPending=null}
  }}catch(err){console.error(err);showToast(err.message)}});
-document.addEventListener('submit',async e=>{const f=e.target;if(!['recipe-form','grocery-form','cloud-login'].includes(f.id))return;e.preventDefault();try{if(f.id==='recipe-form'){if(photoPending)await photoPending;readEditor();if(!editDraft.title.trim())throw Error('Enter a recipe name');const cover=f.querySelector('[name="cover-photo"]');if(cover.files?.[0]){editDraft.photo=await imageData(cover.files[0]);editDraft.photoCloud=null}editDraft.ingredients=editDraft.ingredients.filter(p=>p.name||p.photo);editDraft.steps=editDraft.steps.filter(st=>st.text.trim());await save('recipes',editDraft);closeOverlay();showToast('Recipe saved')}if(f.id==='grocery-form'){const data=new FormData(f);const n=String(data.get('name')||'').trim();if(!n)throw Error('Enter item name');const original=groceries.find(x=>x.id===selected)||{id:uid(),checked:false,category:'pantry',createdAt:now()};if(groceryPhotoPending){const pending=groceryPhotoPending,revision=groceryPhotoRevision;const processed=await pending;if(revision===groceryPhotoRevision)groceryPhotoDraft=processed}const stillChecked=isGroceryChecked(original);await save('groceries',{...original,checked:stillChecked,checkedAt:stillChecked?(original.checkedAt||original.updatedAt):null,name:n,qty:Math.max(.01,Number(data.get('qty'))||1),unit:String(data.get('unit')||''),notes:String(data.get('notes')||''),priority:data.has('priority'),photo:groceryPhotoDraft,photoCloud:groceryPhotoDraft===original.photo?(original.photoCloud||null):null});closeOverlay();showToast('Item saved')}if(f.id==='cloud-login'){if(!cloud)throw Error('Cloud unavailable');cloudLabel('Signing in…');const data=new FormData(f);const res=await cloud.auth.signInWithPassword({email:String(data.get('email')||''),password:String(data.get('password')||'')});if(res.error)throw res.error;cloudUser=res.data.user;cloudReady=true;requestSync();render(true)}}catch(err){console.error(err);showToast(err.message||'Could not save')}});
+document.addEventListener('submit',async e=>{const f=e.target;if(!['recipe-form','grocery-form','cloud-login'].includes(f.id))return;e.preventDefault();try{if(f.id==='recipe-form'){if(photoPending)await photoPending;readEditor();if(!editDraft.title.trim())throw Error('Enter a recipe name');const cover=f.querySelector('[name="cover-photo"]');if(cover.files?.[0]){editDraft.photo=await imageData(cover.files[0]);editDraft.photoCloud=null}editDraft.ingredients=editDraft.ingredients.filter(p=>p.name||p.photo);editDraft.steps=editDraft.steps.filter(st=>st.text.trim());await save('recipes',editDraft);closeOverlay();showToast('Recipe saved')}if(f.id==='grocery-form'){const data=new FormData(f);const n=String(data.get('name')||'').trim();if(!n)throw Error('Enter item name');const original=groceries.find(x=>x.id===selected)||{id:uid(),checked:false,category:'pantry',createdAt:now()};if(groceryPhotoPending){const pending=groceryPhotoPending,revision=groceryPhotoRevision;const processed=await pending;if(revision===groceryPhotoRevision)groceryPhotoDraft=processed}const stillChecked=isGroceryChecked(original);const pickedCategory=String(data.get('category')||'pantry');const category=GROCERY_CATEGORIES.some(([key])=>key===pickedCategory)||pickedCategory===original.category?pickedCategory:'pantry';await save('groceries',{...original,checked:stillChecked,checkedAt:stillChecked?(original.checkedAt||original.updatedAt):null,name:n,qty:Math.max(.01,Number(data.get('qty'))||1),unit:String(data.get('unit')||''),notes:String(data.get('notes')||''),category,priority:data.has('priority'),photo:groceryPhotoDraft,photoCloud:groceryPhotoDraft===original.photo?(original.photoCloud||null):null});closeOverlay();showToast('Item saved')}if(f.id==='cloud-login'){if(!cloud)throw Error('Cloud unavailable');cloudLabel('Signing in…');const data=new FormData(f);const res=await cloud.auth.signInWithPassword({email:String(data.get('email')||''),password:String(data.get('password')||'')});if(res.error)throw res.error;cloudUser=res.data.user;cloudReady=true;requestSync();render(true)}}catch(err){console.error(err);showToast(err.message||'Could not save')}});
 $('#import-file').addEventListener('change',e=>{const f=e.target.files?.[0];e.target.value='';importBackup(f)});
 // An offline launch still works from IndexedDB. Load the cloud client once
 // connectivity returns so offline grocery edits are uploaded automatically.
