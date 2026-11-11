@@ -134,6 +134,8 @@ function scheduleGroceryReset(){
 const SRC=p=>typeof p==='string'&&p.startsWith('lk-photo:')?'':typeof p==='string'&&p.startsWith('./')?'../'+p.slice(2):(p||'');
 const dsrc=p=>esc(SRC(p));
 const label=t=>CATS[t]||'Recipes';
+const preparationName=x=>typeof x==='string'?x:x?.name||'';
+const preparationItem=x=>typeof x==='string'?{id:uid(),name:x,photo:''}:{...x,id:x.id||uid(),photo:x.photo||''};
 const showToast=msg=>{const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3000)};
 const readBlob=file=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.readAsDataURL(file)});
 async function imageData(file){if(!file)return'';if(!file.type.startsWith('image/'))throw Error('Choose an image file');const raw=await readBlob(file);return await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{const canvas=document.createElement('canvas'),ratio=Math.min(1,1100/Math.max(im.width,im.height));canvas.width=Math.max(1,Math.round(im.width*ratio));canvas.height=Math.max(1,Math.round(im.height*ratio));canvas.getContext('2d').drawImage(im,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',.81))};im.onerror=()=>reject(Error('This photo could not be opened. Try a JPEG, PNG or WebP image.'));im.src=raw})}
@@ -184,7 +186,7 @@ const SAMPLE=[
 ];
 async function seedOnce(){const meta=await getAll('meta');if(meta.some(x=>x.key==='initialized'))return;const existing=await getAll('recipes');if(existing.length===0)for(const s of SAMPLE){await write('recipes',{id:s[0],title:s[1],category:s[2],photo:'../'+s[3],minutes:s[4],servings:s[5],favorite:false,difficulty:'Easy',ingredients:s[6],steps:s[7].map((text,i)=>({id:'step-'+i,text,photo:'',note:''})),createdAt:now(),updatedAt:now()})}await write('meta',{key:'initialized',value:true})}
 function setScene(){const art=SCENES[tab]||SCENES.recipes;paintScene(art);$('#header-action').textContent=tab==='settings'?'×':'+';$('#header-action').dataset.action=tab==='settings'?'close-settings':'new-recipe';$('#header-action').style.visibility=tab==='grocery'?'hidden':'visible';$('#add-float').style.display=['recipes','food','drink','dessert'].includes(tab)?'block':'none';$('#bottom-tabs').querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b.dataset.tab===tab);b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false')})}
-function listForTab(){const items=recipes.filter(r=>tab==='recipes'||r.category===tab).filter(r=>filter!=='fav'||r.favorite).filter(r=>filter!=='easy'||/easy/i.test(r.difficulty||'')).filter(r=>filter!=='project'||!(/easy/i.test(r.difficulty||''))).filter(r=>{const q=search.toLowerCase().trim();return !q||String(r.title||'').toLowerCase().includes(q)||(r.ingredients||[]).join(' ').toLowerCase().includes(q)});return items.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}
+function listForTab(){const items=recipes.filter(r=>tab==='recipes'||r.category===tab).filter(r=>filter!=='fav'||r.favorite).filter(r=>filter!=='easy'||/easy/i.test(r.difficulty||'')).filter(r=>filter!=='project'||!(/easy/i.test(r.difficulty||''))).filter(r=>{const q=search.toLowerCase().trim();return !q||String(r.title||'').toLowerCase().includes(q)||(r.ingredients||[]).map(preparationName).join(' ').toLowerCase().includes(q)});return items.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}
 // Built-in covers remain available even when a cloud recipe temporarily has no
 // downloadable image. Never mutate saved photos just to display a fallback.
 const RECIPE_FALLBACKS={
@@ -314,24 +316,27 @@ function beginStepZoomGesture(){
     x:stepZoom.x,y:stepZoom.y};
  }else stepZoom.gesture=null;
 }
-function openStepPhoto(id,index){
+function openStepPhoto(id,index,section='step'){
+  const isPreparation=section==='preparation';
+  const kindLabel=isPreparation?'Preparation':'Step';
+  const zoomAction=isPreparation?'zoom-preparation-photo':'zoom-step-photo';
  const r=recipes.find(item=>item.id===id);
- const photo=r?.steps?.[index]?.photo;
+ const photo=isPreparation?r?.ingredients?.[index]?.photo:r?.steps?.[index]?.photo;
  const source=SRC(photo);
- if(!source){showToast('This step photo is not available yet');return}
+ if(!source){showToast('This photo is not available yet');return}
  closeStepPhoto();
  const viewer=document.createElement('div');
  viewer.className='step-lightbox';
  viewer.setAttribute('role','dialog');
  viewer.setAttribute('aria-modal','true');
- viewer.setAttribute('aria-label','Zoomable photo for step '+(index+1));
+ viewer.setAttribute('aria-label','Zoomable photo for '+kindLabel.toLowerCase()+' '+(index+1));
  viewer.innerHTML=
   '<div class="step-lightbox-bar">'+
-   '<strong>Step '+(index+1)+' photo</strong>'+
+   '<strong>'+kindLabel+' '+(index+1)+' photo</strong>'+
    '<button type="button" class="step-lightbox-close" data-action="close-step-photo" aria-label="Close photo viewer">×</button>'+
   '</div>'+
   '<div class="step-lightbox-stage" aria-label="Pinch to zoom or drag the image">'+
-   '<img class="step-lightbox-image" alt="Zoomable photo for step '+(index+1)+'" draggable="false">'+
+   '<img class="step-lightbox-image" alt="Zoomable photo for '+kindLabel.toLowerCase()+' '+(index+1)+'" draggable="false">'+
   '</div>'+
   '<div class="step-lightbox-controls">'+
    '<button type="button" data-action="step-photo-zoom-out" aria-label="Zoom out">−</button>'+
@@ -397,18 +402,38 @@ function openStepPhoto(id,index){
  if(sheet){sheet.setAttribute('aria-hidden','true');sheet.inert=true}
  stepZoom.scale=1;stepZoom.x=0;stepZoom.y=0;
  stepZoom.pointers.clear();stepZoom.gesture=null;stepZoom.lastTap=null;
- stepZoom.returnFocus=[...overlay.querySelectorAll('[data-action="zoom-step-photo"]')].find(btn=>btn.dataset.id===id&&Number(btn.dataset.index)===index)||null;
+ stepZoom.returnFocus=[...overlay.querySelectorAll('[data-action="'+zoomAction+'"]')].find(btn=>btn.dataset.id===id&&Number(btn.dataset.index)===index)||null;
  viewer.querySelector('.step-lightbox-close').focus({preventScroll:true});
  viewer.querySelector('.step-lightbox-image').addEventListener('load',applyStepZoom);
  applyStepZoom();
 }
 
-function openRecipe(id){const r=recipes.find(x=>x.id===id);if(!r)return;selected=id;showOverlay(`${sheetHead(r.title)}${recipeCover(r)?`<img class="detail-photo" ${recipeImage(r)} alt="Photo of ${esc(r.title)}">`:'<div class="recipe-detail-no-photo">♡<small>No photo added yet</small></div>'}<p>${esc(label(r.category))} · ${Number(r.minutes)||0} min · ${Number(r.servings)||1} servings</p><p>${esc(r.description||'')}</p><div class="actions"><button class="primary" data-action="edit-recipe" data-id="${esc(id)}">✎ Edit recipe</button><button class="secondary" data-action="recipe-to-grocery" data-id="${esc(id)}">+ Shopping list</button></div><h2>Ingredients</h2><ul class="detail-list">${(r.ingredients||[]).map(x=>`<li>${esc(typeof x==='string'?x:x.name||'')}</li>`).join('')}</ul><h2>Steps</h2>${(r.steps||[]).map((st,i)=>`<section class="detail-step"><h3>Step ${i+1}</h3><p>${esc(st.text||'')}</p>${st.photo?`<button type="button" class="step-photo-button" data-action="zoom-step-photo" data-id="${esc(r.id)}" data-index="${i}" aria-label="Open zoomable image for step ${i+1}"><img src="${dsrc(st.photo)}" alt="Photo for step ${i+1}" loading="lazy"></button>`:''}</section>`).join('')}<p>${esc(r.notes||'')}</p><div class="actions"><button class="secondary" data-action="delete-recipe" data-id="${esc(id)}">Delete recipe</button></div>`,'recipe-detail')}
-function newDraft(category){return {id:uid(),title:'',category:category||'food',description:'',difficulty:'Easy',minutes:30,servings:2,photo:'',favorite:false,ingredients:[],steps:[{id:uid(),text:'',note:'',photo:''}],createdAt:now()}}
+function openRecipe(id){
+ const r=recipes.find(x=>x.id===id);
+ if(!r)return;
+ selected=id;
+ showOverlay(`${sheetHead(r.title)}${recipeCover(r)?`<img class="detail-photo" ${recipeImage(r)} alt="Photo of ${esc(r.title)}">`:'<div class="recipe-detail-no-photo">♡<small>No photo added yet</small></div>'}
+ <p>${esc(label(r.category))} · ${Number(r.minutes)||0} min · ${Number(r.servings)||1} servings</p>
+ <p>${esc(r.description||'')}</p>
+ <div class="actions"><button class="primary" data-action="edit-recipe" data-id="${esc(id)}">✎ Edit recipe</button><button class="secondary" data-action="recipe-to-grocery" data-id="${esc(id)}">+ Shopping list</button></div>
+ <h2>Preparations</h2>
+ ${(r.ingredients||[]).map((p,i)=>`<section class="detail-step"><h3>Preparation ${i+1}</h3><p>${esc(preparationName(p))}</p>${typeof p==='object'&&p?.photo?`<button type="button" class="step-photo-button" data-action="zoom-preparation-photo" data-id="${esc(r.id)}" data-index="${i}" aria-label="Open zoomable image for preparation ${i+1}"><img src="${dsrc(p.photo)}" alt="Photo for preparation ${i+1}" loading="lazy"></button>`:''}</section>`).join('')}
+ <h2>Steps</h2>
+ ${(r.steps||[]).map((st,i)=>`<section class="detail-step"><h3>Step ${i+1}</h3><p>${esc(st.text||'')}</p>${st.photo?`<button type="button" class="step-photo-button" data-action="zoom-step-photo" data-id="${esc(r.id)}" data-index="${i}" aria-label="Open zoomable image for step ${i+1}"><img src="${dsrc(st.photo)}" alt="Photo for step ${i+1}" loading="lazy"></button>`:''}</section>`).join('')}
+ <p>${esc(r.notes||'')}</p>
+ <div class="actions"><button class="secondary" data-action="delete-recipe" data-id="${esc(id)}">Delete recipe</button></div>`,'recipe-detail');
+}
+function newDraft(category){return {id:uid(),title:'',category:category||'food',description:'',difficulty:'Easy',minutes:30,servings:2,photo:'',favorite:false,ingredients:[{id:uid(),name:'',photo:''}],steps:[{id:uid(),text:'',note:'',photo:''}],createdAt:now()}}
 function formField(name,title,value='',type='text'){return `<div class="field"><label for="f-${name}">${esc(title)}</label><input id="f-${name}" name="${name}" type="${type}" value="${esc(value)}"></div>`}
-function editRecipe(id){const r=recipes.find(x=>x.id===id);editDraft=r?structuredClone(r):newDraft(['food','drink','dessert'].includes(tab)?tab:'food');renderEditor()}
-function readEditor(){if(!editDraft)return;const f=$('#recipe-form');if(!f)return;const fd=new FormData(f);for(const name of ['title','category','description','difficulty','minutes','servings','notes']){const val=fd.get(name);editDraft[name]=['minutes','servings'].includes(name)?Number(val)||0:String(val||'')}editDraft.ingredients=String(fd.get('ingredients')||'').split('\n').map(x=>x.trim()).filter(Boolean);editDraft.steps.forEach((s,i)=>{s.text=String(fd.get('step-text-'+i)||'').trim()})}
-function renderEditor(){const r=editDraft;if(!r)return;showOverlay(`${sheetHead(r.title?'Edit recipe':'New recipe')}<form id="recipe-form">${formField('title','Recipe name',r.title)}<div class="form-grid"><div class="field"><label for="f-category">Category</label><select id="f-category" name="category">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${r.category===k?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label for="f-difficulty">Difficulty</label><select id="f-difficulty" name="difficulty">${['Easy','Medium','Cozy project'].map(x=>`<option ${r.difficulty===x?'selected':''}>${x}</option>`).join('')}</select></div>${formField('minutes','Minutes',r.minutes,'number')}${formField('servings','Servings',r.servings,'number')}</div><div class="field"><label>Description</label><textarea name="description">${esc(r.description)}</textarea></div><div class="field"><label>Cover photo</label>${r.photo?`<img class="image-preview" src="${dsrc(r.photo)}" alt="Cover preview"><button type="button" class="secondary recipe-remove-photo" data-action="remove-recipe-cover" aria-label="Remove recipe cover photo">Remove cover photo</button>`:''}<input type="file" name="cover-photo" accept="image/*"></div><div class="field"><label>Ingredients (one per line)</label><textarea name="ingredients" rows="6">${esc((r.ingredients||[]).map(x=>typeof x==='string'?x:x.name||'').join('\n'))}</textarea></div><h2>Cooking steps & photos</h2>${r.steps.map((st,i)=>`<div class="step-editor"><h3>Step ${i+1}</h3><div class="field"><label>Instruction</label><textarea name="step-text-${i}" rows="3">${esc(st.text)}</textarea></div>${st.photo?`<img src="${dsrc(st.photo)}" alt="Step photo"><button type="button" class="secondary recipe-remove-photo" data-action="remove-recipe-step-photo" data-index="${i}" aria-label="Remove photo from step ${i+1}">Remove step photo</button>`:''}<div class="field"><label>Photo for this step</label><input type="file" accept="image/*" data-step-file="${i}"></div><button class="secondary" type="button" data-action="remove-step" data-index="${i}">Remove step</button></div>`).join('')}<button class="secondary" type="button" data-action="add-step">+ Add step</button><div class="field"><label>Notes</label><textarea name="notes">${esc(r.notes||'')}</textarea></div><div class="actions"><button class="primary" type="submit">Save recipe</button><button class="secondary" type="button" data-action="close">Cancel</button></div></form>`)}
+function editRecipe(id){
+ const r=recipes.find(x=>x.id===id);
+ editDraft=r?structuredClone(r):newDraft(['food','drink','dessert'].includes(tab)?tab:'food');
+ editDraft.ingredients=(editDraft.ingredients||[]).map(preparationItem);
+ if(!editDraft.ingredients.length)editDraft.ingredients.push(preparationItem(''));
+ renderEditor();
+}
+function readEditor(){if(!editDraft)return;const f=$('#recipe-form');if(!f)return;const fd=new FormData(f);for(const name of ['title','category','description','difficulty','minutes','servings','notes']){const val=fd.get(name);editDraft[name]=['minutes','servings'].includes(name)?Number(val)||0:String(val||'')}editDraft.ingredients.forEach((p,i)=>{p.name=String(fd.get('preparation-text-'+i)||'').trim()});editDraft.steps.forEach((s,i)=>{s.text=String(fd.get('step-text-'+i)||'').trim()})}
+function renderEditor(){const r=editDraft;if(!r)return;showOverlay(`${sheetHead(r.title?'Edit recipe':'New recipe')}<form id="recipe-form">${formField('title','Recipe name',r.title)}<div class="form-grid"><div class="field"><label for="f-category">Category</label><select id="f-category" name="category">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${r.category===k?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label for="f-difficulty">Difficulty</label><select id="f-difficulty" name="difficulty">${['Easy','Medium','Cozy project'].map(x=>`<option ${r.difficulty===x?'selected':''}>${x}</option>`).join('')}</select></div>${formField('minutes','Minutes',r.minutes,'number')}${formField('servings','Servings',r.servings,'number')}</div><div class="field"><label>Description</label><textarea name="description">${esc(r.description)}</textarea></div><div class="field"><label>Cover photo</label>${r.photo?`<img class="image-preview" src="${dsrc(r.photo)}" alt="Cover preview"><button type="button" class="secondary recipe-remove-photo" data-action="remove-recipe-cover" aria-label="Remove recipe cover photo">Remove cover photo</button>`:''}<input type="file" name="cover-photo" accept="image/*"></div><h2>Preparations</h2>${r.ingredients.map((p,i)=>`<div class="step-editor"><h3>Preparation ${i+1}</h3><div class="field"><label>Preparation</label><textarea name="preparation-text-${i}" rows="3">${esc(p.name)}</textarea></div>${p.photo?`<img src="${dsrc(p.photo)}" alt="Preparation photo"><button type="button" class="secondary recipe-remove-photo" data-action="remove-preparation-photo" data-index="${i}" aria-label="Remove photo from preparation ${i+1}">Remove preparation photo</button>`:''}<div class="field"><label>Photo for this preparation</label><input type="file" accept="image/*" data-preparation-file="${i}"></div><button class="secondary" type="button" data-action="remove-preparation" data-index="${i}">Remove preparation</button></div>`).join('')}<button class="secondary" type="button" data-action="add-preparation">+ Add preparation</button><h2>Cooking steps & photos</h2>${r.steps.map((st,i)=>`<div class="step-editor"><h3>Step ${i+1}</h3><div class="field"><label>Instruction</label><textarea name="step-text-${i}" rows="3">${esc(st.text)}</textarea></div>${st.photo?`<img src="${dsrc(st.photo)}" alt="Step photo"><button type="button" class="secondary recipe-remove-photo" data-action="remove-recipe-step-photo" data-index="${i}" aria-label="Remove photo from step ${i+1}">Remove step photo</button>`:''}<div class="field"><label>Photo for this step</label><input type="file" accept="image/*" data-step-file="${i}"></div><button class="secondary" type="button" data-action="remove-step" data-index="${i}">Remove step</button></div>`).join('')}<button class="secondary" type="button" data-action="add-step">+ Add step</button><div class="field"><label>Notes</label><textarea name="notes">${esc(r.notes||'')}</textarea></div><div class="actions"><button class="primary" type="submit">Save recipe</button><button class="secondary" type="button" data-action="close">Cancel</button></div></form>`)}
 function openGrocery(id){
  const g=groceries.find(x=>x.id===id);
  if(!g)return;
@@ -502,6 +527,11 @@ async function cloudExpand(kind,v){
    step.photoCloud=step.photo?.startsWith?.('lk-photo:')?step.photo:null;
    step.photo=await cloudImageIn(step.photo);
   }
+  for(const p of x.ingredients||[]){
+   if(!p||typeof p==='string')continue;
+   p.photoCloud=p.photo?.startsWith?.('lk-photo:')?p.photo:null;
+   p.photo=await cloudImageIn(p.photo);
+  }
  }else if(kind==='grocery'){
   x.photoCloud=x.photo?.startsWith?.('lk-photo:')?x.photo:null;
   x.photo=await cloudImageIn(x.photo);
@@ -520,6 +550,12 @@ async function cloudPrepare(kind,r){
    st.photo=st.photo?.startsWith?.('data:image/')&&st.photoCloud?.startsWith?.('lk-photo:')
     ?st.photoCloud:await cloudImageOut(st.photo,r.id,st.id||'step');
    delete st.photoCloud;
+  }
+  for(const p of x.ingredients||[]){
+   if(!p||typeof p==='string')continue;
+   p.photo=p.photo?.startsWith?.('data:image/')&&p.photoCloud?.startsWith?.('lk-photo:')
+    ?p.photoCloud:await cloudImageOut(p.photo,r.id,'preparation-'+p.id);
+   delete p.photoCloud;
   }
  }else if(kind==='grocery'){
   x.photo=x.photo?.startsWith?.('data:image/')&&x.photoCloud?.startsWith?.('lk-photo:')
@@ -603,12 +639,15 @@ async function syncCloud(){
      if(payload.photo?.startsWith?.('lk-photo:')&&latest.photo===record.photo&&latest.photoCloud!==payload.photo){
       latest.photoCloud=payload.photo;changed=true;
      }
-     const sentSteps=new Map((payload.steps||[]).map(st=>[st.id,st]));
-     const originalSteps=new Map((record.steps||[]).map(st=>[st.id,st]));
-     for(const step of latest.steps||[]){
-      const sent=sentSteps.get(step.id),old=originalSteps.get(step.id);
-      if(sent?.photo?.startsWith?.('lk-photo:')&&old&&step.photo===old.photo&&step.photoCloud!==sent.photo){
-       step.photoCloud=sent.photo;changed=true;
+     for(const section of ['steps','ingredients']){
+      const sentEntries=new Map((payload[section]||[]).filter(x=>x&&typeof x==='object').map(x=>[x.id,x]));
+      const originalEntries=new Map((record[section]||[]).filter(x=>x&&typeof x==='object').map(x=>[x.id,x]));
+      for(const entry of latest[section]||[]){
+       if(!entry||typeof entry==='string')continue;
+       const sent=sentEntries.get(entry.id),old=originalEntries.get(entry.id);
+       if(sent?.photo?.startsWith?.('lk-photo:')&&old&&entry.photo===old.photo&&entry.photoCloud!==sent.photo){
+        entry.photoCloud=sent.photo;changed=true;
+       }
       }
      }
      if(changed)await write('recipes',latest);
@@ -679,10 +718,13 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&!overlay.hidden&&(overlay.classList.contains('grocery-detail-overlay')||overlay.classList.contains('recipe-detail-overlay')))closeOverlay();
 });
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const act=b.dataset.action,id=b.dataset.id; if(act!=='check-grocery')playSound();try{
- switch(act){case'zoom-step-photo':openStepPhoto(id,Number(b.dataset.index));break;case'close-step-photo':closeStepPhoto();break;case'step-photo-zoom-in':setStepZoom(stepZoom.scale+.5);break;case'step-photo-zoom-out':setStepZoom(stepZoom.scale-.5);break;case'step-photo-reset':resetStepZoom();break;case'tab':activate(b.dataset.tab);break;case'close':closeOverlay();break;case'close-settings':activate('grocery');break;case'new-recipe':editRecipe();break;case'open-recipe':openRecipe(id);break;case'edit-recipe':editRecipe(id);break;case'favorite':{const r=recipes.find(x=>x.id===id);if(r)await save('recipes',{...r,favorite:!r.favorite});break}case'filter':filter=b.dataset.filter;render(true);break;
+ switch(act){case'zoom-preparation-photo':openStepPhoto(id,Number(b.dataset.index),'preparation');break;case'zoom-step-photo':openStepPhoto(id,Number(b.dataset.index));break;case'close-step-photo':closeStepPhoto();break;case'step-photo-zoom-in':setStepZoom(stepZoom.scale+.5);break;case'step-photo-zoom-out':setStepZoom(stepZoom.scale-.5);break;case'step-photo-reset':resetStepZoom();break;case'tab':activate(b.dataset.tab);break;case'close':closeOverlay();break;case'close-settings':activate('grocery');break;case'new-recipe':editRecipe();break;case'open-recipe':openRecipe(id);break;case'edit-recipe':editRecipe(id);break;case'favorite':{const r=recipes.find(x=>x.id===id);if(r)await save('recipes',{...r,favorite:!r.favorite});break}case'filter':filter=b.dataset.filter;render(true);break;
  case'open-grocery':openGrocery(id);break;case'edit-grocery':editGrocery(id);break;case'remove-grocery-photo':groceryPhotoRevision++;groceryPhotoDraft='';groceryPhotoPending=null;groceryPhotoPreview();break;case'add-grocery-detail':editGrocery(null);break;case'delete-grocery':if(confirm('Delete this grocery item?'))await destroy('groceries',id);break;case'uncheck-purchased':{const bought=groceries.filter(isGroceryChecked);for(const g of bought)await changeLocal('groceries',g.id,{...g,checked:false,checkedAt:null,updatedAt:now()});if(bought.length){await reload();requestSync()}break;}
  case'remove-recipe-cover':readEditor();editDraft.photo='';editDraft.photoCloud=null;renderEditor();break;
- case'remove-recipe-step-photo':readEditor();if(editDraft.steps[Number(b.dataset.index)]){editDraft.steps[Number(b.dataset.index)].photo='';editDraft.steps[Number(b.dataset.index)].photoCloud=null}renderEditor();break;
+ case'remove-preparation-photo':readEditor();if(editDraft.ingredients[Number(b.dataset.index)]){editDraft.ingredients[Number(b.dataset.index)].photo='';editDraft.ingredients[Number(b.dataset.index)].photoCloud=null}renderEditor();break;
+  case'add-preparation':readEditor();editDraft.ingredients.push(preparationItem(''));renderEditor();break;
+  case'remove-preparation':readEditor();editDraft.ingredients.splice(Number(b.dataset.index),1);if(!editDraft.ingredients.length)editDraft.ingredients.push(preparationItem(''));renderEditor();break;
+  case'remove-recipe-step-photo':readEditor();if(editDraft.steps[Number(b.dataset.index)]){editDraft.steps[Number(b.dataset.index)].photo='';editDraft.steps[Number(b.dataset.index)].photoCloud=null}renderEditor();break;
  case'add-step':readEditor();editDraft.steps.push({id:uid(),text:'',note:'',photo:''});renderEditor();break;case'remove-step':readEditor();editDraft.steps.splice(Number(b.dataset.index),1);if(!editDraft.steps.length)editDraft.steps.push({id:uid(),text:'',note:'',photo:''});renderEditor();break;
  case'delete-recipe':if(confirm('Delete this recipe?')){await destroy('recipes',id);closeOverlay()}break;case'recipe-to-grocery':await addIngredients(id);break;
  case'export':await exportBackup();break;case'import':$('#import-file').click();break;
@@ -712,13 +754,25 @@ document.addEventListener('change',async e=>{try{if(e.target.dataset.action==='c
  try{const photo=await photoPending;if(editDraft===draft){draft.photo=photo;draft.photoCloud=null;renderEditor()}}
  finally{photoPending=null}
  }
- if(e.target.dataset.stepFile!==undefined&&e.target.files?.[0]){
+ if(e.target.dataset.preparationFile!==undefined&&e.target.files?.[0]){
+   readEditor();
+   const draft=editDraft,index=Number(e.target.dataset.preparationFile);
+   const preparation=draft?.ingredients[index];
+   photoPending=imageData(e.target.files[0]);
+   try{
+    const photo=await photoPending;
+    if(editDraft===draft&&preparation&&draft.ingredients.includes(preparation)){
+     preparation.photo=photo;preparation.photoCloud=null;renderEditor();
+    }
+   }finally{photoPending=null}
+  }
+  if(e.target.dataset.stepFile!==undefined&&e.target.files?.[0]){
  readEditor();const draft=editDraft,index=Number(e.target.dataset.stepFile);
  photoPending=imageData(e.target.files[0]);
  try{const photo=await photoPending;if(editDraft===draft&&draft.steps[index]){draft.steps[index].photo=photo;draft.steps[index].photoCloud=null;renderEditor()}}
  finally{photoPending=null}
  }}catch(err){console.error(err);showToast(err.message)}});
-document.addEventListener('submit',async e=>{const f=e.target;if(!['recipe-form','grocery-form','cloud-login'].includes(f.id))return;e.preventDefault();try{if(f.id==='recipe-form'){if(photoPending)await photoPending;readEditor();if(!editDraft.title.trim())throw Error('Enter a recipe name');const cover=f.querySelector('[name="cover-photo"]');if(cover.files?.[0]){editDraft.photo=await imageData(cover.files[0]);editDraft.photoCloud=null}editDraft.steps=editDraft.steps.filter(st=>st.text.trim());await save('recipes',editDraft);closeOverlay();showToast('Recipe saved')}if(f.id==='grocery-form'){const data=new FormData(f);const n=String(data.get('name')||'').trim();if(!n)throw Error('Enter item name');const original=groceries.find(x=>x.id===selected)||{id:uid(),checked:false,category:'pantry',createdAt:now()};if(groceryPhotoPending){const pending=groceryPhotoPending,revision=groceryPhotoRevision;const processed=await pending;if(revision===groceryPhotoRevision)groceryPhotoDraft=processed}const stillChecked=isGroceryChecked(original);await save('groceries',{...original,checked:stillChecked,checkedAt:stillChecked?(original.checkedAt||original.updatedAt):null,name:n,qty:Math.max(.01,Number(data.get('qty'))||1),unit:String(data.get('unit')||''),notes:String(data.get('notes')||''),priority:data.has('priority'),photo:groceryPhotoDraft,photoCloud:groceryPhotoDraft===original.photo?(original.photoCloud||null):null});closeOverlay();showToast('Item saved')}if(f.id==='cloud-login'){if(!cloud)throw Error('Cloud unavailable');cloudLabel('Signing in…');const data=new FormData(f);const res=await cloud.auth.signInWithPassword({email:String(data.get('email')||''),password:String(data.get('password')||'')});if(res.error)throw res.error;cloudUser=res.data.user;cloudReady=true;requestSync();render(true)}}catch(err){console.error(err);showToast(err.message||'Could not save')}});
+document.addEventListener('submit',async e=>{const f=e.target;if(!['recipe-form','grocery-form','cloud-login'].includes(f.id))return;e.preventDefault();try{if(f.id==='recipe-form'){if(photoPending)await photoPending;readEditor();if(!editDraft.title.trim())throw Error('Enter a recipe name');const cover=f.querySelector('[name="cover-photo"]');if(cover.files?.[0]){editDraft.photo=await imageData(cover.files[0]);editDraft.photoCloud=null}editDraft.ingredients=editDraft.ingredients.filter(p=>p.name||p.photo);editDraft.steps=editDraft.steps.filter(st=>st.text.trim());await save('recipes',editDraft);closeOverlay();showToast('Recipe saved')}if(f.id==='grocery-form'){const data=new FormData(f);const n=String(data.get('name')||'').trim();if(!n)throw Error('Enter item name');const original=groceries.find(x=>x.id===selected)||{id:uid(),checked:false,category:'pantry',createdAt:now()};if(groceryPhotoPending){const pending=groceryPhotoPending,revision=groceryPhotoRevision;const processed=await pending;if(revision===groceryPhotoRevision)groceryPhotoDraft=processed}const stillChecked=isGroceryChecked(original);await save('groceries',{...original,checked:stillChecked,checkedAt:stillChecked?(original.checkedAt||original.updatedAt):null,name:n,qty:Math.max(.01,Number(data.get('qty'))||1),unit:String(data.get('unit')||''),notes:String(data.get('notes')||''),priority:data.has('priority'),photo:groceryPhotoDraft,photoCloud:groceryPhotoDraft===original.photo?(original.photoCloud||null):null});closeOverlay();showToast('Item saved')}if(f.id==='cloud-login'){if(!cloud)throw Error('Cloud unavailable');cloudLabel('Signing in…');const data=new FormData(f);const res=await cloud.auth.signInWithPassword({email:String(data.get('email')||''),password:String(data.get('password')||'')});if(res.error)throw res.error;cloudUser=res.data.user;cloudReady=true;requestSync();render(true)}}catch(err){console.error(err);showToast(err.message||'Could not save')}});
 $('#import-file').addEventListener('change',e=>{const f=e.target.files?.[0];e.target.value='';importBackup(f)});
 // An offline launch still works from IndexedDB. Load the cloud client once
 // connectivity returns so offline grocery edits are uploaded automatically.
