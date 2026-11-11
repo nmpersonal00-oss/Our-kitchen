@@ -1,10 +1,10 @@
 /* Offline shell for The Little Kitchen. IndexedDB groceries and outbox remain untouched. */
-const CACHE = 'little-kitchen-v38-grocery-categories';
+const CACHE = 'little-kitchen-v39-grocery-scroll';
 const CORE = [
   './index.html',
   './v2/index.html',
   './v2/kitchen.css?v=3.7-grocery-categories',
-  './v2/kitchen.js?v=3.7-grocery-categories',
+  './v2/kitchen.js?v=3.8-grocery-scroll',
   // The original sample covers and matching backup art must work offline,
   // including previously installed phones that haven't opened each recipe.
   './exact-pumpkin-soup.webp',
