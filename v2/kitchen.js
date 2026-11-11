@@ -182,7 +182,8 @@ async function destroy(store,id){
  await reload();
  requestSync();
 }
-async function reload(){[recipes,groceries]=await Promise.all([getAll('recipes'),getAll('groceries')]);render()}
+// Grocery checkoffs and background sync must not reset a shopper's scroll position.
+async function reload(){[recipes,groceries]=await Promise.all([getAll('recipes'),getAll('groceries')]);render(tab==='grocery')}
 const SAMPLE=[
  ['demo-soup','Velvety Pumpkin Soup','food','exact-pumpkin-soup.webp',35,4,['2 tbsp olive oil','1 onion','2 garlic cloves','3 cups pumpkin purée','2 cups vegetable broth','½ cup cream'],['Sauté onion in oil until soft.','Add pumpkin, garlic and warm spices.','Pour in stock and simmer for 15 minutes.','Blend until smooth, add cream, and serve.']],
  ['demo-pasta','Garden Herb Pasta','food','exact-herb-pasta.webp',25,3,['12 oz pasta','½ cup fresh herbs','2 tbsp olive oil','1 clove garlic','½ cup parmesan'],['Boil pasta in salted water.','Chop herbs and sauté garlic in olive oil.','Toss pasta with herbs and a splash of cooking water.','Finish with parmesan.']],
