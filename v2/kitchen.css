@@ -850,3 +850,22 @@ html,body,.app,.app *{touch-action:manipulation}
  font-weight:700;
  touch-action:manipulation;
 }
+
+/* Grocery category shortcuts directly below the grocery search bar. */
+.grocery-category-tabs{
+ display:flex;gap:8px;margin:1px 0 14px;padding:2px 1px 5px;
+ overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
+ scrollbar-width:none;
+}
+.grocery-category-tabs::-webkit-scrollbar{display:none}
+.grocery-category-tab{
+ flex:0 0 auto;min-height:42px;padding:9px 14px;border-radius:999px;
+ border:1px solid #b98a70;background:rgba(73,38,28,.95);
+ color:#fff1df;font-size:14px;font-weight:700;white-space:nowrap;
+}
+.grocery-category-tab.active{
+ background:linear-gradient(150deg,#ffe0c7,#f0b5a3);
+ border:2px solid #fff3dd;color:#4c2c22;
+ box-shadow:0 0 11px rgba(255,210,188,.6);
+}
+.grocery-category-tab:focus-visible{outline:2px solid #fff0d7;outline-offset:2px}
